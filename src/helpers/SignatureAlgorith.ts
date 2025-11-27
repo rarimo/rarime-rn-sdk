@@ -13,18 +13,14 @@ const ECDSA_WITH_SHA_256 = "1.2.840.10045.4.3.2";
 const ECDSA_WITH_SHA_384 = "1.2.840.10045.4.3.3";
 const ECDSA_WITH_SHA_512 = "1.2.840.10045.4.3.4";
 
-/**
- * High-level classification of supported cryptographic signature algorithms.
- */
+
 export enum SignatureAlgorithmType {
     RSA = 'RSA',
     RsaPss = 'RSA-PSS',
     ECDSA = 'ECDSA',
 }
 
-/**
- * Represents the signature algorithm used to sign the Document Security Object (SoD).
- */
+
 export class SignatureAlgorithm {
     private type: SignatureAlgorithmType;
 
@@ -36,24 +32,13 @@ export class SignatureAlgorithm {
         return this.type;
     }
 
-    /**
-     * Converts the algorithm type to its standard string representation.
-     * @returns The string representation of the algorithm (e.g., "RSA-PSS").
-     */
+    
     public toString(): string {
         return this.type;
     }
 
-    /**
-     * Creates a SignatureAlgorithm instance from an Object Identifier (OID) string.
-     * It maps specific hash-signature combinations (like SHA256-RSA) to their high-level
-     * algorithm types (RSA).
-     *
-     * @param oid The Object Identifier string found in the SoD's signature structure.
-     * @returns A SignatureAlgorithm instance.
-     * @throws {Error} If the OID is not a supported signature algorithm.
-     */
-    public static fromOid(oid: string): SignatureAlgorithm {
+    
+    public static fromOID(oid: string): SignatureAlgorithm {
         switch (oid) {
             // RSA family algorithms
             case SHA_1_WITH_RSA_ENCRYPTION:
