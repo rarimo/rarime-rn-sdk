@@ -1,4 +1,5 @@
 import { BaseBlock } from "asn1js";
+export * from "./sod";
 
 export function wrapPem(certBlock: BaseBlock): string {
   const LINE_LENGTH = 64;
