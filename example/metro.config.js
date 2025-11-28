@@ -19,13 +19,9 @@ config.resolver.nodeModulesPaths = [
 ];
 
 config.resolver.extraNodeModules = {
-  // crypto: require.resolve('crypto-browserify'),
-  // fs: require.resolve('buffer/'),
-  // http: require.resolve('stream-http'),
-  // os: require.resolve('os-browserify/browser.js'),
-  // constants: require.resolve('constants-browserify'),
-  // path: require.resolve('path-browserify'),
-  // stream: require.resolve('readable-stream'),
+  crypto: require.resolve('crypto-browserify'),
+  stream: require.resolve('readable-stream'),
+  buffer: require.resolve('buffer/'),
   '@rarimo/rarimo-rn-sdk': path.resolve(__dirname, '..'),
 };
 

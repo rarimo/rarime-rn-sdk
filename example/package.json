@@ -11,15 +11,20 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@babel/core": "^7.24.6",
+    "babel-plugin-module-resolver": "^5.0.2",
+    "babel-preset-expo": "~12.0.3",
     "expo": "~54.0.25",
     "react": "19.1.0",
-    "react-native": "0.81.5",
-    "babel-preset-expo": "~12.0.3",
-    "@babel/core": "^7.24.6",
-    "babel-plugin-module-resolver": "^5.0.2"
+    "react-native": "0.81.5"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.1",
+    "react-native-get-random-values": "^2.0.0",
+    "react-native-url-polyfill": "^3.0.0",
+    "readable-stream": "^4.7.0",
     "typescript": "~5.9.2"
   },
   "private": true,
