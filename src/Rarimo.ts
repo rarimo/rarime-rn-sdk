@@ -1,6 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
 import { JsonRpcProvider, toUtf8Bytes } from "ethers";
-import { useMemo } from "react";
 import { DocumentStatus, RarimePassport } from "./RarimoPassport";
 import { RegistrationSimple, StateKeeper__factory } from "./types/contracts";
 import { NoirCircuitParams } from "./RnNoirModule";
@@ -53,16 +51,14 @@ export class Rarime {
   public async getDocumentStatus(
     passport: RarimePassport
   ): Promise<DocumentStatus> {
-    const contract = useMemo(() => {
-      const provider = new JsonRpcProvider(
-        this.config.apiConfiguration.jsonRpcEvmUrl
-      );
+    const provider = new JsonRpcProvider(
+      this.config.apiConfiguration.jsonRpcEvmUrl
+    );
 
-      return StateKeeper__factory.connect(
-        this.config.contractsConfiguration.stateKeeperAddress,
-        provider
-      );
-    }, []);
+    const contract = StateKeeper__factory.connect(
+      this.config.contractsConfiguration.stateKeeperAddress,
+      provider
+    );
 
     const passportKey = passport.getPassportKey();
     console.log(passportKey);
@@ -75,18 +71,10 @@ export class Rarime {
 
     console.log(Buffer.from(passportKeyBytes).toString("hex"));
 
-    const PassportInfo = await useQuery({
-      queryKey: ["getPassportInfo"],
-      queryFn: async () => {
-        const res = await contract.getPassportInfo(passportKeyBytes);
-
-        return res;
-      },
-    });
-
+    const PassportInfo = await contract.getPassportInfo(passportKeyBytes.slice(0, 32));
     console.log(PassportInfo);
 
-    const activeIdentity = PassportInfo.data?.[0].activeIdentity;
+    const activeIdentity = PassportInfo?.[0].activeIdentity;
 
     const ZERO_BYTES_STRING = Array.from(ZERO_BYTES)
       .map((b) => b.toString(16).padStart(2, "0"))
@@ -105,16 +93,16 @@ export class Rarime {
 
   public async registerIdentity(passport: RarimePassport): Promise<String> {
     const passportStatus = await this.getDocumentStatus(passport);
-
-    if (passportStatus === DocumentStatus.RegisteredWithOtherPk) {
-      throw new Error("This document was registred by other Private Key");
-    }
+    console.log(passportStatus);
+    // if (passportStatus === DocumentStatus.RegisteredWithOtherPk) {
+    //   throw new Error("This document was registred by other Private Key");
+    // }
 
     if (passportStatus === DocumentStatus.RegisteredWithThisPk) {
       throw new Error("This document was registred by this Private Key");
     }
 
-    const hashAlgoOID = passport.extractSignatureOID().toString();
+    const hashAlgoOID = passport.extractDGHashAlgo();
 
     console.log(hashAlgoOID);
 
@@ -243,7 +231,8 @@ export class Rarime {
       data: {
         tx_data: txCallData,
         no_send: false,
-        destination: this.config.contractsConfiguration.registerSimpleContractAddress,
+        destination:
+          this.config.contractsConfiguration.registerSimpleContractAddress,
       },
     };
     const liteRegisterResponse = await fetch(
