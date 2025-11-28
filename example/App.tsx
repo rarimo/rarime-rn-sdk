@@ -8,7 +8,6 @@ import {
   RarimeUtils,
 } from "../src";
 
-
 export default function App() {
   const [busy, setBusy] = React.useState(false);
   return (
@@ -19,38 +18,45 @@ export default function App() {
           title="lite register"
           disabled={busy}
           onPress={async () => {
-            setBusy(true);
-            const userPrivateKey = RarimeUtils.generateBJJPrivateKey();
+            try {
+              setBusy(true);
+              const userPrivateKey = RarimeUtils.generateBJJPrivateKey();
 
-            const rarimoConfig: RarimeConfiguration = {
-              contractsConfiguration: {
-                stateKeeperAddress: "0x12883d5F530AF7EC2adD7cEC29Cf84215efCf4D8",
-                registerSimpleContractAddress: "0x1b6ae4b80F0f26DC53731D1d7aA31fc3996B513B",
-                poseidonSmtAddress: "0xb8bAac4C443097d697F87CC35C5d6B06dDe64D60",
-              },
-              apiConfiguration: {
-                jsonRpcEvmUrl: "https://rpc.qtestnet.org",
-                rarimeApiUrl: "https://api.orgs.app.stage.rarime.com",
-              },
-              userConfiguration: {
-                userPrivateKey: userPrivateKey,
-              },
-            };
+              const rarimoConfig: RarimeConfiguration = {
+                contractsConfiguration: {
+                  stateKeeperAddress:
+                    "0x12883d5F530AF7EC2adD7cEC29Cf84215efCf4D8",
+                  registerSimpleContractAddress:
+                    "0x1b6ae4b80F0f26DC53731D1d7aA31fc3996B513B",
+                  poseidonSmtAddress:
+                    "0xb8bAac4C443097d697F87CC35C5d6B06dDe64D60",
+                },
+                apiConfiguration: {
+                  jsonRpcEvmUrl: "https://rpc.qtestnet.org",
+                  rarimeApiUrl: "https://api.orgs.app.stage.rarime.com",
+                },
+                userConfiguration: {
+                  userPrivateKey: userPrivateKey,
+                },
+              };
 
-            const rarimo = new Rarime(rarimoConfig);
+              const rarimo = new Rarime(rarimoConfig);
 
-            const passport = new RarimePassport({
-              dataGroup1: Buffer.from(
-                ""
-              ),
-              sod: Buffer.from(
-               ""
-              ),
-            });
+              const passport = new RarimePassport({
+                dataGroup1: Buffer.from("", "base64"),
+                sod: Buffer.from("", "base64"),
+              });
 
-            const liteRegisterResult = await rarimo.registerIdentity(passport);
-            console.log("liteRegisterResult", liteRegisterResult);
-            setBusy(false);
+              const liteRegisterResult = await rarimo.registerIdentity(
+                passport
+              );
+              console.log("liteRegisterResult", liteRegisterResult);
+              setBusy(false);
+            } catch (e) {
+              console.error(e);
+              alert("Error: " + (e as Error).message);
+              setBusy(false);
+            }
           }}
         />
       </ScrollView>
