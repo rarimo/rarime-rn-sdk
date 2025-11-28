@@ -19,7 +19,14 @@ config.resolver.nodeModulesPaths = [
 ];
 
 config.resolver.extraNodeModules = {
-  '@rarimo/rarime-rn-sdk': '..',
+  // crypto: require.resolve('crypto-browserify'),
+  // fs: require.resolve('buffer/'),
+  // http: require.resolve('stream-http'),
+  // os: require.resolve('os-browserify/browser.js'),
+  // constants: require.resolve('constants-browserify'),
+  // path: require.resolve('path-browserify'),
+  // stream: require.resolve('readable-stream'),
+  '@rarimo/rarimo-rn-sdk': path.resolve(__dirname, '..'),
 };
 
 config.watchFolders = [path.resolve(__dirname, '..')];

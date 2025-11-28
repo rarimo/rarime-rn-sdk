@@ -24,7 +24,7 @@ export interface RarimeAPIConfiguration {
 
 export interface RarimeContractsConfiguration {
   stateKeeperAddress: string;
-  registerContractAddress: string;
+  registerSimpleContractAddress: string;
   poseidonSmtAddress: string;
 }
 
@@ -212,7 +212,7 @@ export class Rarime {
     const verifySodResponseParsed = await verifySodResponse.json();
 
     const registrationSimpleContract = createRegistrationSimpleContract(
-      this.config.contractsConfiguration.registerContractAddress,
+      this.config.contractsConfiguration.registerSimpleContractAddress,
       new JsonRpcProvider(this.config.apiConfiguration.jsonRpcEvmUrl)
     );
 
@@ -243,12 +243,12 @@ export class Rarime {
       data: {
         tx_data: txCallData,
         no_send: false,
-        destination: this.config.contractsConfiguration.registerContractAddress,
+        destination: this.config.contractsConfiguration.registerSimpleContractAddress,
       },
     };
     const liteRegisterResponse = await fetch(
       this.config.apiConfiguration.rarimeApiUrl +
-        "/integrations/incognito-light-registrator/v1/registerid",
+        "/integrations/registration-relayer/v1/register",
       {
         method: "POST",
         headers: {

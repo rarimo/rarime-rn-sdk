@@ -401,8 +401,8 @@ export class RarimePassport {
       throw new Error("Sex mismatch");
     }
 
-    const mrzBirth = Buffer.from(mrz.birthDate, "utf8");
-    const mrzExpiry = Buffer.from(mrz.expiryDate, "utf8");
+    // const mrzBirth = Buffer.from(mrz.birthDate, "utf8");
+    // const mrzExpiry = Buffer.from(mrz.expiryDate, "utf8");
 
     throw new Error("Method validate not implemented.");
   }

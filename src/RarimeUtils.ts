@@ -1,5 +1,5 @@
-import { babyJub } from "@iden3/js-crypto";
-import { Poseidon } from "@iden3/js-crypto";
+import { babyJub, Poseidon  } from "@iden3/js-crypto";
+
 
 export class RarimeUtils {
 
