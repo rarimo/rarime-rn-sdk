@@ -1,17 +1,5 @@
-import { NativeModule, requireNativeModule } from "expo";
 import * as FileSystem from "expo-file-system";
-import { default as NoirModule } from "./RnNoirModule";
-
-declare class RnNoirModule extends NativeModule {
-  provePlonk: (
-    trustedSetupUri: string,
-    inputs: string,
-    byteCode: string
-  ) => Promise<string>;
-}
-
-// This call loads the native module object from the JSI.
-export default requireNativeModule<RnNoirModule>("RnNoir");
+import { default as NoirModule } from "./src/NoirModule";
 
 export type NoirZKProof = {
   proof: string;
@@ -207,3 +195,5 @@ const supportedNoirCircuits: NoirCircuitParams[] = [
     3
   ),
 ];
+
+export default NoirModule;

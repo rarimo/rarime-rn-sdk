@@ -2,8 +2,9 @@ import { Buffer } from "buffer";
 import * as asn1js from "asn1js";
 import { StateKeeper } from "./types/contracts";
 import { Poseidon } from "@iden3/js-crypto";
-import { ObjectIdentifier } from "asn1js";
 import { HashAlgorithm } from "./helpers/HashAlgorithm";
+import { Sod } from "./utils";
+import { SOD } from "@li0ard/tsemrtd";
 
 export type PassportInfo = {
   passportInfo_: StateKeeper.PassportInfoStructOutput;
@@ -63,7 +64,9 @@ export class RarimePassport {
   }
 
   public getPassportKey(): bigint {
+    console.log("get pass key", this);
     if (this.dataGroup15) {
+      console.log("has dg15");
       const key = this.parseDg15Pubkey(this.dataGroup15);
 
       if (key.type === "Ecdsa") {
@@ -72,24 +75,22 @@ export class RarimePassport {
         return RarimePassport.extractRsaPassportKey(key.modulus, key.exponent);
       }
     }
-
+    console.log("no dg15");
     return this.getPassportHash();
   }
 
   public getPassportHash(): bigint {
     const signedAttributes = this.extractSignedAttributes();
-
+    console.log("signed attr", signedAttributes);
     let hashBlock = HashAlgorithm.fromOID(this.getSignatureAlgorithm());
-
+    console.log("hash block", hashBlock);
     let hashBytes = hashBlock.getHashFixed32(signedAttributes);
 
     let out = 0n;
     let acc = 0n;
     let accBits = 0;
 
-    
     for (let i = 251; i >= 0; i--) {
-     
       const byteIndex = Math.floor(i / 8);
       const bitIndex = 7 - (i % 8);
       const bit = (BigInt(hashBytes[byteIndex]) >> BigInt(bitIndex)) & 1n;
@@ -109,7 +110,6 @@ export class RarimePassport {
       out = (out << BigInt(accBits)) | acc;
     }
 
-    
     return Poseidon.hash([out]);
   }
 
@@ -235,254 +235,15 @@ export class RarimePassport {
 
   public extractSignedAttributes(): Uint8Array {
     const buffer = this.sod;
-
-    const asn1Result = asn1js.fromBER(buffer);
-    if (asn1Result.offset === -1) {
-      throw new Error("ASN1DecodeError: Failed to decode BER data");
-    }
-
-    const rootBlock = asn1Result.result;
-
-    if (
-      !(rootBlock.idBlock.tagClass === 2 && rootBlock.idBlock.tagNumber === 23)
-    ) {
-      throw new Error("Expected Application 23 at root");
-    }
-
-    const app23SeqContent = (rootBlock.valueBlock as any)
-      .value as asn1js.BaseBlock[];
-
-    if (!Array.isArray(app23SeqContent)) {
-      throw new Error("Expected SEQUENCE inside Application 23");
-    }
-
-    const tagged0Block = app23SeqContent.find(
-      (block) => block.idBlock.tagClass === 3 && block.idBlock.tagNumber === 0
-    );
-
-    if (!tagged0Block) {
-      throw new Error("No [0] tagged block found in Application 23 SEQUENCE");
-    }
-
-    const tagged0InnerBlocks: asn1js.BaseBlock[] = (
-      tagged0Block.valueBlock as any
-    ).value as asn1js.BaseBlock[];
-
-    if (!Array.isArray(tagged0InnerBlocks)) {
-      if (tagged0Block.valueBlock instanceof asn1js.ValueBlock) {
-        throw new Error("Content inside [0] is not a SEQUENCE/SET.");
-      }
-
-      throw new Error("Expected Constructed block inside [0].");
-    }
-
-    const finalSeqBlock = tagged0InnerBlocks.find((block) => {
-      if (block.idBlock.tagClass === 1 && block.idBlock.tagNumber === 17) {
-        const setContent = (block.valueBlock as any)
-          .value as asn1js.BaseBlock[];
-        if (setContent && setContent.length > 0) {
-          const firstElement = setContent[0];
-          if (firstElement.idBlock.tagNumber === 16) {
-            const seqInner = (firstElement.valueBlock as any)
-              .value as asn1js.BaseBlock[];
-
-            if (seqInner && seqInner.length === 6) {
-              return true;
-            }
-          }
-        }
-      }
-      return false;
-    });
-
-    if (!finalSeqBlock) {
-      throw new Error(
-        "No inner SET containing 6-element SEQUENCE found (SignedData structure missing)."
-      );
-    }
-
-    const finalSeqContent = (
-      (finalSeqBlock.valueBlock as any).value as asn1js.BaseBlock[]
-    ).find((b) => b.idBlock.tagNumber === 16);
-
-    if (!finalSeqContent) {
-      throw new Error(
-        "Internal error: Could not find the 6-element SEQUENCE content."
-      );
-    }
-
-    const signedDataElements = (finalSeqContent.valueBlock as any)
-      .value as asn1js.BaseBlock[];
-
-    const signedAttrsBlock = signedDataElements.find(
-      (elem) => elem.idBlock.tagClass === 3 && elem.idBlock.tagNumber === 0
-    );
-
-    if (!signedAttrsBlock) {
-      throw new Error(
-        "No [0] tag (SignedAttributes) found inside final SEQUENCE."
-      );
-    }
-
-    const innerSetBlock = (
-      (signedAttrsBlock.valueBlock as any).value as asn1js.BaseBlock[]
-    )[0];
-
-    if (!innerSetBlock || innerSetBlock.idBlock.tagNumber !== 17) {
-      throw new Error("Expected SET inside SignedAttributes [0] tag.");
-    }
-
-    const signedAttributesDer = innerSetBlock.toBER();
-
-    let signedAttributesBytes = new Uint8Array(signedAttributesDer);
-
-    if (signedAttributesBytes.length > 0) {
-      signedAttributesBytes[0] = 0x31;
-    } else {
-      throw new Error("Failed to encode Signed Attributes to DER.");
-    }
-
-    return signedAttributesBytes;
+    const sod = new Sod(buffer);
+    const signedAttributes = sod.signedAttributes;
+    return signedAttributes;
   }
 
-  public getMrzString(): string {
-    const asn1 = asn1js.fromBER(Buffer.from(this.dataGroup1));
-    if (asn1.offset === -1) throw new Error("DG1 decode error");
-
-    const root = asn1.result;
-    // @ts-ignore
-    const app31 = root.valueBlock.value[0];
-
-    // @ts-ignore
-    const content = app31.valueBlock.value[0];
-
-    // @ts-ignore
-    const rawBytes = content.valueBlock.valueHex;
-    const str = Buffer.from(rawBytes).toString("utf8");
-
-    return str.replace(/\0/g, "");
-  }
-
-  public getMrzData(): MRZData {
-    const mrzString = this.getMrzString();
-    return this.parseMrzTd1String(mrzString);
-  }
-
-  private parseMrzTd1String(mrz: string): MRZData {
-    // Rust slicing logic 1-to-1
-    const namesPart = mrz.substring(60);
-    const names = namesPart.split("<<");
-
-    return {
-      documentType: mrz.substring(0, 2),
-      issuingCountry: mrz.substring(2, 5),
-      documentNumber: mrz.substring(5, 14),
-      birthDate: mrz.substring(30, 36),
-      sex: mrz.charAt(37),
-      expiryDate: mrz.substring(38, 44),
-      lastName: names[0] || "",
-      firstName: names[1] || "",
-    };
-  }
-
-  public validate(criteria: VotingCriteria): void {
-    const mrz = this.getMrzData();
-
-    // Check Whitelist
-    if (criteria.citizenshipWhitelist.length > 0) {
-      const countryInt = Buffer.from(mrz.issuingCountry, "utf8");
-      if (!criteria.citizenshipWhitelist.includes(countryInt.toString())) {
-        throw new Error("Citizen is not in whitelist");
-      }
-    }
-
-    // Sex check
-    if (criteria.sex !== "0" && mrz.sex !== criteria.sex) {
-      throw new Error("Sex mismatch");
-    }
-
-    // const mrzBirth = Buffer.from(mrz.birthDate, "utf8");
-    // const mrzExpiry = Buffer.from(mrz.expiryDate, "utf8");
-
-    throw new Error("Method validate not implemented.");
-  }
-
-  public extractSignatureOID(): ObjectIdentifier {
-    const { result, offset } = asn1js.fromBER(Buffer.from(this.sod));
-
-    if (offset === -1) {
-      throw new Error("Failed to decode ASN.1 data");
-    }
-
-    const blocks = [result];
-
-    const app23Block = blocks.find(
-      (b) => b.idBlock.tagClass === 2 && b.idBlock.tagNumber === 23
-    );
-
-    if (!app23Block) {
-      throw new Error("Expected Application 23 SEQUENCE in the root");
-    }
-
-    const seqInApp23 = (app23Block as asn1js.Constructed).valueBlock.value;
-    if (!Array.isArray(seqInApp23)) {
-      throw new Error("Expected SEQUENCE inside Application 23");
-    }
-
-    const tagged0Block = seqInApp23.find(
-      (b) => b.idBlock.tagClass === 3 && b.idBlock.tagNumber === 0
-    );
-
-    if (!tagged0Block) {
-      throw new Error("No [0] tagged block found");
-    }
-
-    const seqInTagged0Content = (tagged0Block as asn1js.Constructed).valueBlock
-      .value;
-
-    // Explicit tags usually wrap the content, so we take the first element
-    const seqInTagged0Wrapper = seqInTagged0Content[0];
-
-    if (!seqInTagged0Wrapper || seqInTagged0Wrapper.idBlock.tagNumber !== 16) {
-      throw new Error("Expected SEQUENCE inside [0]");
-    }
-
-    const seqInTagged0 = (seqInTagged0Wrapper as asn1js.Constructed).valueBlock
-      .value;
-
-    const setBlock = seqInTagged0.find(
-      (b) => b.idBlock.tagClass === 1 && b.idBlock.tagNumber === 17
-    );
-
-    if (!setBlock) {
-      throw new Error("ASN1RouteError");
-    }
-
-    const setContent = (setBlock as asn1js.Constructed).valueBlock.value;
-    const innerSeq = setContent[0];
-
-    if (!innerSeq) {
-      throw new Error("SET is empty");
-    }
-
-    if (innerSeq.idBlock.tagNumber !== 16) {
-      throw new Error("Expected SEQUENCE as first element of SET");
-    }
-
-    const innerSeqContent = (innerSeq as asn1js.Constructed).valueBlock.value;
-    const oidBlock = innerSeqContent[0];
-
-    if (!oidBlock) {
-      throw new Error("Inner SEQUENCE is empty");
-    }
-
-    if (oidBlock.idBlock.tagNumber !== 6) {
-      throw new Error(
-        "Expected ObjectIdentifier as first element of inner SEQUENCE"
-      );
-    }
-
-    return oidBlock as ObjectIdentifier;
+  public extractDGHashAlgo(): string {
+    const buffer = Buffer.from(this.sod); // Use tsmrtd's SOD parser
+    const sod = SOD.load(buffer);
+    return sod.ldsObject.algorithm.algorithm;
   }
 
   public getDgHashAlgorithm(): string {
@@ -568,103 +329,17 @@ export class RarimePassport {
   }
 
   public getSignatureAlgorithm(): string {
-    const buffer = this.sod;
+    const buffer = Buffer.from(this.sod); // Use tsmrtd's SOD parser
+    const sod = SOD.load(buffer);
 
-    const asn1Result = asn1js.fromBER(buffer);
-    if (asn1Result.offset === -1) {
-      throw new Error("ASN1DecodeError: Failed to decode BER data");
-    }
-
-    const rootBlock = asn1Result.result;
-
-    if (
-      !(rootBlock.idBlock.tagClass === 2 && rootBlock.idBlock.tagNumber === 23)
-    ) {
-      throw new Error("Expected Application 23 as the root block");
-    }
-
-    const app23SeqContent = (rootBlock.valueBlock as any)
-      .value as asn1js.BaseBlock[];
-
-    if (!Array.isArray(app23SeqContent)) {
-      throw new Error("Expected SEQUENCE inside Application 23");
-    }
-
-    const tagged0 = app23SeqContent.find(
-      (block) => block.idBlock.tagClass === 3 && block.idBlock.tagNumber === 0
-    );
-
-    if (!tagged0) {
-      throw new Error("No [0] tagged block found in Application 23 SEQUENCE");
-    }
-
-    // Получаем контент (SEQUENCE) внутри [0]
-    const innerSeq = (tagged0.valueBlock as any).value as asn1js.BaseBlock[];
-
-    if (!Array.isArray(innerSeq)) {
-      throw new Error("Expected SEQUENCE inside [0]");
-    }
-
-    // Ищем SET (Tag 17)
-    const setBlock = innerSeq.find(
-      (block) => block.idBlock.tagClass === 1 && block.idBlock.tagNumber === 17
-    );
-
-    if (!setBlock) {
-      throw new Error("No SET found inside the main SEQUENCE");
-    }
-
-    const setContent = (setBlock.valueBlock as any).value as asn1js.BaseBlock[];
-    if (!setContent || setContent.length === 0) {
-      throw new Error("SET is empty");
-    }
-
-    const outerSequenceBlock = setContent[0];
-    if (outerSequenceBlock.idBlock.tagNumber !== 16) {
-      throw new Error("Expected SEQUENCE as first element of SET");
-    }
-
-    const sequenceContent = (outerSequenceBlock.valueBlock as any)
-      .value as asn1js.BaseBlock[];
-
-    if (sequenceContent.length !== 6) {
-      throw new Error(
-        "SET-nested SEQUENCE did not contain 6 elements (Expected SignedData content)"
-      );
-    }
-
-    const signatureAlgBlock = sequenceContent[1];
-
-    if (signatureAlgBlock.idBlock.tagNumber !== 16) {
-      throw new Error(
-        "Expected SEQUENCE (SignatureAlgorithmIdentifier) at index 1"
-      );
-    }
-
-    const signatureAlgContent = (signatureAlgBlock.valueBlock as any)
-      .value as asn1js.BaseBlock[];
-
-    if (!signatureAlgContent || signatureAlgContent.length === 0) {
-      throw new Error("Signature Algorithm SEQUENCE is empty");
-    }
-
-    const oidBlock = signatureAlgContent[0];
-
-    if (oidBlock.idBlock.tagNumber !== 6) {
-      throw new Error(
-        "Expected ObjectIdentifier as first element of Signature Algorithm SEQUENCE"
-      );
-    }
-
-    const oidValue = (
-      oidBlock as asn1js.ObjectIdentifier
-    ).valueBlock.toString();
-
-    if (!oidValue.startsWith("1.2.840.")) {
+    const signatureAlgorithmOID =
+      sod.signatures[0].signatureAlgorithm.algorithm;
+    console.log(signatureAlgorithmOID);
+    if (!signatureAlgorithmOID.startsWith("1.2.840.")) {
       throw new Error("Signature algorithm OID does not start with 1.2.840.");
     }
 
-    return oidValue;
+    return signatureAlgorithmOID;
   }
 
   public extractEncapsulatedContent(): Uint8Array {
@@ -758,52 +433,65 @@ export class RarimePassport {
       throw new Error("Expected Application 23 as the root block");
     }
 
-    // Получаем контент (SEQUENCE) внутри Application 23
-    const app23SeqContent = (rootBlock.valueBlock as any)
-      .value as asn1js.BaseBlock[];
+    const app23SeqContent = (rootBlock.valueBlock as any).value;
 
     if (!Array.isArray(app23SeqContent)) {
       throw new Error("Expected SEQUENCE inside Application 23");
     }
 
     const tagged0Block = app23SeqContent.find(
-      (block) => block.idBlock.tagClass === 3 && block.idBlock.tagNumber === 0
+      (block: asn1js.BaseBlock) =>
+        block.idBlock.tagClass === 3 && block.idBlock.tagNumber === 0
     );
 
     if (!tagged0Block) {
-      throw new Error("No [0] tagged block found in Application 23 SEQUENCE");
+      // Try to fallback: sometimes the [0] block is not present, try to find a SEQUENCE
+      const fallbackSeq = app23SeqContent.find(
+        (block: asn1js.BaseBlock) =>
+          block.idBlock.tagClass === 1 && block.idBlock.tagNumber === 16
+      );
+      if (fallbackSeq) {
+        const fbVal = (fallbackSeq.valueBlock as any).value;
+        if (fbVal && Array.isArray(fbVal)) {
+          return new Uint8Array(fallbackSeq.toBER(false));
+        } else {
+          throw new Error("Fallback SEQUENCE found but has no value array");
+        }
+      }
+      throw new Error(
+        "No [0] tagged block found in Application 23 SEQUENCE and no fallback SEQUENCE found"
+      );
     }
 
-    const innerSeq = (tagged0Block.valueBlock as any)
-      .value as asn1js.BaseBlock[];
+    const innerSeq = (tagged0Block.valueBlock as any).value;
 
     if (!Array.isArray(innerSeq)) {
       throw new Error("Expected SEQUENCE inside [0]");
     }
 
-    let sequenceBlock: asn1js.BaseBlock[] | undefined;
-
     const setBlock = innerSeq.find(
-      (block) => block.idBlock.tagClass === 1 && block.idBlock.tagNumber === 17
+      (block: asn1js.BaseBlock) =>
+        block.idBlock.tagClass === 1 && block.idBlock.tagNumber === 17
     );
 
     if (!setBlock) {
       throw new Error("No SET found inside the main SEQUENCE");
     }
 
-    const setContent = (setBlock.valueBlock as any).value as asn1js.BaseBlock[];
+    const setContent = (setBlock.valueBlock as any).value;
 
     if (!setContent || setContent.length === 0) {
       throw new Error("SET is empty");
     }
 
     const outerSequenceBlock = setContent[0];
+    let sequenceBlock: asn1js.BaseBlock[] | undefined;
+
     if (outerSequenceBlock.idBlock.tagNumber === 16) {
-      const content = (outerSequenceBlock.valueBlock as any)
-        .value as asn1js.BaseBlock[];
+      const content = (outerSequenceBlock.valueBlock as any).value;
 
       if (content && content.length === 6) {
-        sequenceBlock = innerSeq;
+        sequenceBlock = content;
       }
     }
 
@@ -814,7 +502,8 @@ export class RarimePassport {
     }
 
     const signatureBlock = sequenceBlock.find(
-      (b) => b.idBlock.tagClass === 1 && b.idBlock.tagNumber === 4
+      (b: asn1js.BaseBlock) =>
+        b.idBlock.tagClass === 1 && b.idBlock.tagNumber === 4
     );
 
     if (!signatureBlock) {
@@ -823,8 +512,7 @@ export class RarimePassport {
       );
     }
 
-    const signatureBuffer = (signatureBlock.valueBlock as asn1js.OctetString)
-      .valueBlock.valueHex;
+    const signatureBuffer = (signatureBlock.valueBlock as any).valueHex;
 
     return new Uint8Array(signatureBuffer);
   }
