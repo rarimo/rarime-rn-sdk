@@ -9,16 +9,28 @@ const withRnNoir = config => {
 allprojects {
     repositories {
         flatDir {
-            dirs project(':rarimo-rn-sdk').projectDir.absolutePath + '/libs'
+            // Point directly to the local module's AARs without requiring a Gradle project include
+            dirs new File(rootDir, '../../android/libs')
         }
     }
 }
 `
 
-    // Only add if not already present
-    if (!buildGradle.includes("project(':rarimo-rn-sdk').projectDir.absolutePath + '/libs'")) {
-      config.modResults.contents = buildGradle + flatDirSnippet
+      // Replace any legacy references to project(':rarimo-rn-sdk') with a direct path
+      const problematic = "project(':rarimo-rn-sdk').projectDir.absolutePath + '/libs'"
+      const replacement = "new File(rootDir, '../../android/libs')"
+
+      let newContents = buildGradle
+      if (newContents.includes(problematic)) {
+          newContents = newContents.split(problematic).join(replacement)
+      }
+
+      // Only add our snippet if not already present
+      if (!newContents.includes("../../android/libs") && !newContents.includes(replacement)) {
+          newContents = newContents + flatDirSnippet
     }
+
+      config.modResults.contents = newContents
 
     return config
   })

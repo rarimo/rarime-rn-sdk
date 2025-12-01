@@ -10,13 +10,24 @@ module.exports = (api) => {
     ],
     plugins: [
       [
+          'module:react-native-dotenv',
+          {
+              moduleName: '@env',
+              path: '.env',
+              allowUndefined: true,
+              verbose: false,
+              envName: 'APP_ENV',
+              safe: false,
+          },
+      ],
+        [
         'module-resolver',
         {
           root: ['./'],
           alias: {
-
             // 'crypto': 'crypto-browserify',
             // 'stream': 'readable-stream',
+              '@rarimo/rarime-rn-sdk': '../src/index',
             '@iden3/js-crypto': '@iden3/js-crypto/dist/browser/esm/index.js',
           },
           extensions: [
