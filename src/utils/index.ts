@@ -1,29 +1,35 @@
-import { BaseBlock } from "asn1js";
+import {CertificateSet} from "@peculiar/asn1-cms";
+import {AsnConvert} from "@peculiar/asn1-schema";
+import {Buffer} from "buffer";
+
 export * from "./sod";
 
-export function wrapPem(certBlock: BaseBlock): string {
+export function wrapPem(certificates: CertificateSet): string {
   const LINE_LENGTH = 64;
 
-  const derBuffer = certBlock.toBER();
+    const pemBlocks: string[] = [];
 
-  if (!derBuffer || derBuffer.byteLength === 0) {
-    throw new Error("Failed to encode ASN.1 block to DER bytes.");
-  }
+    for (const choice of certificates) {
+        const cert = (choice as any).certificate;
+        if (!cert) continue;
 
-  const derUint8Array = new Uint8Array(derBuffer);
-  const base64Content = Buffer.from(derUint8Array).toString("base64");
+        const derBytes = new Uint8Array(AsnConvert.serialize(cert));
+        const base64Content = Buffer.from(derBytes).toString("base64");
 
-  let formattedBase64 = "";
+        let formattedBase64 = "";
+        for (let i = 0; i < base64Content.length; i += LINE_LENGTH) {
+            formattedBase64 += base64Content.slice(i, i + LINE_LENGTH) + "\n";
+        }
 
-  for (let i = 0; i < base64Content.length; i += LINE_LENGTH) {
-    const chunk = base64Content.substring(i, i + LINE_LENGTH);
-    formattedBase64 += chunk + "\n";
-  }
+        pemBlocks.push(
+            `-----BEGIN CERTIFICATE-----\n${formattedBase64}-----END CERTIFICATE-----`
+        );
+    }
 
-  const pemHeader = "-----BEGIN CERTIFICATE-----";
-  const pemFooter = "-----END CERTIFICATE-----";
+    if (pemBlocks.length === 0) {
+        throw new Error("No X.509 certificates found in CertificateSet");
+    }
 
-  const pemString = `${pemHeader}\n${formattedBase64}${pemFooter}`;
-
-  return pemString;
+    // Separate multiple certificates with a blank line
+    return pemBlocks.join("\n");
 }
