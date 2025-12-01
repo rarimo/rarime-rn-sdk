@@ -1,263 +1,278 @@
-import { JsonRpcProvider, toUtf8Bytes } from "ethers";
-import { DocumentStatus, RarimePassport } from "./RarimoPassport";
-import { RegistrationSimple, StateKeeper__factory } from "./types/contracts";
-import { NoirCircuitParams } from "./RnNoirModule";
-import { Platform } from "react-native";
-import { HashAlgorithm } from "./helpers/HashAlgorithm";
-import { createRegistrationSimpleContract } from "./helpers/contracts";
-import { RarimeUtils } from "./RarimeUtils";
-import { SignatureAlgorithm } from "./helpers/SignatureAlgorith";
-import { wrapPem } from "./utils";
+import {JsonRpcProvider, toUtf8Bytes} from "ethers";
+import {DocumentStatus, RarimePassport} from "./RarimoPassport";
+import {RegistrationSimple, StateKeeper__factory} from "./types/contracts";
+import {NoirCircuitParams} from "./RnNoirModule";
+import {Platform} from "react-native";
+import {HashAlgorithm} from "./helpers/HashAlgorithm";
+import {createRegistrationSimpleContract} from "./helpers/contracts";
+import {RarimeUtils} from "./RarimeUtils";
+import {SignatureAlgorithm} from "./helpers/SignatureAlgorith";
+import {wrapPem} from "./utils";
 
 const ZERO_BYTES = new Uint8Array(32);
 
 export interface RarimeUserConfiguration {
-  userPrivateKey: string;
+    userPrivateKey: string;
 }
 
 export interface RarimeAPIConfiguration {
-  jsonRpcEvmUrl: string;
-  rarimeApiUrl: string;
+    jsonRpcEvmUrl: string;
+    rarimeApiUrl: string;
 }
 
 export interface RarimeContractsConfiguration {
-  stateKeeperAddress: string;
-  registerSimpleContractAddress: string;
-  poseidonSmtAddress: string;
+    stateKeeperAddress: string;
+    registerSimpleContractAddress: string;
+    poseidonSmtAddress: string;
 }
 
 export interface RarimeConfiguration {
-  contractsConfiguration: RarimeContractsConfiguration;
-  apiConfiguration: RarimeAPIConfiguration;
-  userConfiguration: RarimeUserConfiguration;
+    contractsConfiguration: RarimeContractsConfiguration;
+    apiConfiguration: RarimeAPIConfiguration;
+    userConfiguration: RarimeUserConfiguration;
 }
 
 export class Rarime {
-  private config: RarimeConfiguration;
+    private config: RarimeConfiguration;
 
-  constructor(config: RarimeConfiguration) {
-    if (config.userConfiguration.userPrivateKey.startsWith("0x")) {
-      config.userConfiguration.userPrivateKey =
-        config.userConfiguration.userPrivateKey.slice(2);
+    constructor(config: RarimeConfiguration) {
+        if (config.userConfiguration.userPrivateKey.startsWith("0x")) {
+            config.userConfiguration.userPrivateKey =
+                config.userConfiguration.userPrivateKey.slice(2);
+        }
+
+        if (config.userConfiguration.userPrivateKey.length !== 64) {
+            throw new Error("Not valid private key");
+        }
+
+        this.config = config;
     }
 
-    if (config.userConfiguration.userPrivateKey.length !== 64) {
-      throw new Error("Not valid private key");
+    public async getDocumentStatus(
+        passport: RarimePassport
+    ): Promise<DocumentStatus> {
+        const provider = new JsonRpcProvider(
+            this.config.apiConfiguration.jsonRpcEvmUrl
+        );
+
+        const contract = StateKeeper__factory.connect(
+            this.config.contractsConfiguration.stateKeeperAddress,
+            provider
+        );
+
+        const passportKey = passport.getPassportKey();
+        console.log(passportKey);
+
+        const passportKeyHex = passportKey.toString(16);
+
+        console.log("PassportKeyHex:", passportKeyHex);
+
+        const passportKeyBytes = toUtf8Bytes(passportKeyHex);
+
+        console.log(Buffer.from(passportKeyBytes).toString("hex"));
+
+        const PassportInfo = await contract.getPassportInfo(passportKeyBytes.slice(0, 32));
+        console.log(PassportInfo);
+
+        const activeIdentity = PassportInfo?.[0].activeIdentity;
+
+        const ZERO_BYTES_STRING = Array.from(ZERO_BYTES)
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+
+        if (activeIdentity === ZERO_BYTES_STRING) {
+            return DocumentStatus.NotRegistered;
+        }
+
+        if (activeIdentity === this.config.userConfiguration.userPrivateKey) {
+            return DocumentStatus.RegisteredWithThisPk;
+        }
+
+        return DocumentStatus.RegisteredWithOtherPk;
     }
 
-    this.config = config;
-  }
+    public async registerIdentity(passport: RarimePassport): Promise<String> {
+        const passportStatus = await this.getDocumentStatus(passport);
+        console.log(passportStatus);
+        // if (passportStatus === DocumentStatus.RegisteredWithOtherPk) {
+        //   throw new Error("This document was registred by other Private Key");
+        // }
 
-  public async getDocumentStatus(
-    passport: RarimePassport
-  ): Promise<DocumentStatus> {
-    const provider = new JsonRpcProvider(
-      this.config.apiConfiguration.jsonRpcEvmUrl
-    );
+        if (passportStatus === DocumentStatus.RegisteredWithThisPk) {
+            throw new Error("This document was registred by this Private Key");
+        }
 
-    const contract = StateKeeper__factory.connect(
-      this.config.contractsConfiguration.stateKeeperAddress,
-      provider
-    );
+        const hashAlgoOID = passport.extractDGHashAlgo();
 
-    const passportKey = passport.getPassportKey();
-    console.log(passportKey);
+        console.log(hashAlgoOID);
 
-    const passportKeyHex = passportKey.toString(16);
+        const hashAlgo = HashAlgorithm.fromOID(hashAlgoOID);
 
-    console.log("PassportKeyHex:", passportKeyHex);
+        const hashLength = hashAlgo.getByteLength();
 
-    const passportKeyBytes = toUtf8Bytes(passportKeyHex);
+        const circuit = NoirCircuitParams.fromName("register_light_" + hashLength);
 
-    console.log(Buffer.from(passportKeyBytes).toString("hex"));
+        await NoirCircuitParams.downloadTrustedSetup();
 
-    const PassportInfo = await contract.getPassportInfo(passportKeyBytes.slice(0, 32));
-    console.log(PassportInfo);
+        const byteCode = await circuit.downloadByteCode();
 
-    const activeIdentity = PassportInfo?.[0].activeIdentity;
+        let inputs = {
+            dg1: NoirCircuitParams.formatArray(
+                Array.from(passport.dataGroup1).map(byteValue => byteValue.toString()), false),
+            sk_identity: this.config.userConfiguration.userPrivateKey,
+        };
 
-    const ZERO_BYTES_STRING = Array.from(ZERO_BYTES)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
+        if (Platform.OS === "android") {
+            inputs = {
+                dg1: NoirCircuitParams.formatArray(
+                    Array.from(passport.dataGroup1).map(byteValue => byteValue.toString()), true),
+                sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
+            };
+        }
+        console.log("Proof Inputs", inputs);
+        const proof = await circuit.prove(JSON.stringify(inputs), byteCode);
 
-    if (activeIdentity === ZERO_BYTES_STRING) {
-      return DocumentStatus.NotRegistered;
-    }
+        if (!proof) {
+            throw new Error(`Proof generation failed for registration proof`);
+        }
+        console.log(proof);
 
-    if (activeIdentity === this.config.userConfiguration.userPrivateKey) {
-      return DocumentStatus.RegisteredWithThisPk;
-    }
+        const pubSignalsBuffers = proof.pub_signals.map((sig) =>
+            Buffer.from(sig, "hex")
+        );
 
-    return DocumentStatus.RegisteredWithOtherPk;
-  }
+        const proofBuffer = Buffer.from(proof.proof, "hex");
 
-  public async registerIdentity(passport: RarimePassport): Promise<String> {
-    const passportStatus = await this.getDocumentStatus(passport);
-    console.log(passportStatus);
-    // if (passportStatus === DocumentStatus.RegisteredWithOtherPk) {
-    //   throw new Error("This document was registred by other Private Key");
-    // }
+        const proofBytes = Buffer.concat([...pubSignalsBuffers, proofBuffer]);
 
-    if (passportStatus === DocumentStatus.RegisteredWithThisPk) {
-      throw new Error("This document was registred by this Private Key");
-    }
+        const verifySodRequest = {
+            data: {
+                id: "",
+                type_field: "register",
+                attributes: {
+                    document_sod: {
+                        hash_algorithm: HashAlgorithm.fromOID(
+                            passport.extractDGHashAlgo()
+                        ).toString(),
+                        signature_algorithm: SignatureAlgorithm.fromOID(
+                            passport.getSignatureAlgorithm()
+                        ).toString(),
+                        signed_attributes: "0x" + Buffer.from(
+                            passport.extractSignedAttributes()
+                        ).toString("hex"),
+                        encapsulated_content: "0x" + Buffer.from(
+                            passport.extractEncapsulatedContent()
+                        ).toString("hex"),
+                        signature: "0x" + Buffer.from(passport.extractSignature()).toString("hex"),
+                        pem_file: wrapPem(passport.getCertificate()),
+                        dg15: passport.dataGroup15
+                            ? "0x" + Buffer.from(passport.dataGroup15).toString("hex")
+                            : "",
+                        aa_signature: passport.aaSignature
+                            ? "0x" + Buffer.from(passport.aaSignature).toString("hex")
+                            : "",
+                        sod: "0x" + Buffer.from(passport.sod).toString("hex"),
+                    },
+                    zk_proof: Buffer.from(proofBytes).toString("base64"),
+                },
+            },
+        };
 
-    const hashAlgoOID = passport.extractDGHashAlgo();
+        console.log(JSON.stringify(verifySodRequest));
 
-    console.log(hashAlgoOID);
+        const verifySodResponse = await fetch(
+            this.config.apiConfiguration.rarimeApiUrl +
+            "/integrations/incognito-light-registrator/v1/registerid",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(verifySodRequest),
+            }
+        );
 
-    const hashAlgo = HashAlgorithm.fromOID(hashAlgoOID);
+        if (!verifySodResponse.ok) {
+            const errorData = await verifySodResponse.json();
+            throw new Error(
+                `HTTP error ${verifySodResponse.status}: ${JSON.stringify(errorData)}`
+            );
+        }
 
-    const hashLength = hashAlgo.getByteLength();
 
-    const circuit = NoirCircuitParams.fromName("register_light_" + hashLength);
+        const verifySodResponseParsed = await verifySodResponse.json();
+        console.log(verifySodResponseParsed)
+        const registrationSimpleContract = createRegistrationSimpleContract(
+            this.config.contractsConfiguration.registerSimpleContractAddress,
+            new JsonRpcProvider(this.config.apiConfiguration.jsonRpcEvmUrl)
+        );
+        console.log(proof.pub_signals[1]);
+        const passportStruct: RegistrationSimple.PassportStruct = {
+            dgCommit: BigInt("0x" + proof.pub_signals[0]),
+            dg1Hash: Buffer.from(proof.pub_signals[1], "hex"),
+            publicKey: verifySodResponseParsed.data.attributes.public_key,
+            passportHash: Buffer.from(proof.pub_signals[2], "hex"),
+            verifier: verifySodResponseParsed.data.attributes.verifier, //if not work strip "0x" prefix
+        };
+        console.log(passportStruct);
 
-    await NoirCircuitParams.downloadTrustedSetup();
-
-    const byteCode = await circuit.downloadByteCode();
-
-    let inputs = {
-      pk: this.config.userConfiguration.userPrivateKey,
-      dg1: Array.from(passport.dataGroup1).map(String),
-    };
-
-    if (Platform.OS === "android") {
-      inputs = {
-        pk: "0x" + this.config.userConfiguration.userPrivateKey,
-        dg1: Array.from(passport.dataGroup1).map(String),
-      };
-    }
-
-    const proof = await circuit.prove(JSON.stringify(inputs), byteCode);
-
-    if (!proof) {
-      throw new Error(`Proof generation failed for registration proof`);
-    }
-    console.log(proof);
-
-    const pubSignalsBuffers = proof.pub_signals.map((sig) =>
-      Buffer.from(sig, "hex")
-    );
-
-    const proofBuffer = Buffer.from(proof.proof, "hex");
-
-    const proofBytes = Buffer.concat([...pubSignalsBuffers, proofBuffer]);
-
-    const verifySodRequest = {
-      data: {
-        id: "",
-        type_field: "register",
-        attributes: {
-          document_sod: {
-            hashAlgorithm: HashAlgorithm.fromOID(
-              passport.getDgHashAlgorithm()
-            ).toString(),
-            signatureAlgorithm: SignatureAlgorithm.fromOID(
-              passport.getSignatureAlgorithm()
-            ).toString(),
-            signedAttributes: Buffer.from(
-              passport.extractSignedAttributes()
-            ).toString("hex"),
-            encapsulatedContent: Buffer.from(
-              passport.extractEncapsulatedContent()
-            ).toString("hex"),
-            signature: Buffer.from(passport.extractSignature()).toString("hex"),
-            pemFile: wrapPem(passport.getCertificatePem()),
-            dg15: passport.dataGroup15
-              ? Buffer.from(passport.dataGroup15).toString("hex")
-              : "",
-            AASignature: passport.aaSignature
-              ? Buffer.from(passport.aaSignature).toString("hex")
-              : "",
-            sod: Buffer.from(passport.sod).toString("hex"),
-          },
-          zkProof: Buffer.from(proofBytes).toString("base64"),
-        },
-      },
-    };
-
-    console.log(verifySodRequest);
-
-    const verifySodResponse = await fetch(
-      this.config.apiConfiguration.rarimeApiUrl +
-        "/integrations/incognito-light-registrator/v1/registerid",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(verifySodRequest),
-      }
-    );
-
-    if (!verifySodResponse.ok) {
-      const errorData = await verifySodResponse.json();
-      throw new Error(
-        `HTTP error ${verifySodResponse.status}: ${JSON.stringify(errorData)}`
-      );
-    }
-
-    const verifySodResponseParsed = await verifySodResponse.json();
-
-    const registrationSimpleContract = createRegistrationSimpleContract(
-      this.config.contractsConfiguration.registerSimpleContractAddress,
-      new JsonRpcProvider(this.config.apiConfiguration.jsonRpcEvmUrl)
-    );
-
-    const passportStruct: RegistrationSimple.PassportStruct = {
-      dgCommit: proof.pub_signals[0],
-      dg1Hash: "0x" + proof.pub_signals[1],
-      publicKey: toUtf8Bytes(
-        verifySodResponseParsed.data.attributes.public_key
-      ).slice(0, 32),
-      passportHash: "0x" + proof.pub_signals[2],
-      verifier: verifySodResponseParsed.data.attributes.verifier, //if not work strip "0x" prefix
-    };
-
-    const txCallData =
-      registrationSimpleContract.contractInterface.encodeFunctionData(
-        "registerSimpleViaNoir",
-        [
-          "0x" +
+        console.log("calldata: ", [
+            "0x" +
             RarimeUtils.getProfileKey(
-              this.config.userConfiguration.userPrivateKey
+                this.config.userConfiguration.userPrivateKey
             ),
-          passportStruct,
-          verifySodResponseParsed.data.attributes.signature,
-          proof.proof,
-        ]
-      );
-    const lite_register_request = {
-      data: {
-        tx_data: txCallData,
-        no_send: false,
-        destination:
-          this.config.contractsConfiguration.registerSimpleContractAddress,
-      },
-    };
-    const liteRegisterResponse = await fetch(
-      this.config.apiConfiguration.rarimeApiUrl +
-        "/integrations/registration-relayer/v1/register",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(lite_register_request),
-      }
-    );
+            passportStruct,
+            Buffer.from(verifySodResponseParsed.data.attributes.signature, "hex"),
+            Buffer.from(proof.proof, "hex"),
+        ]);
 
-    if (!liteRegisterResponse.ok) {
-      const errorData = await liteRegisterResponse.json();
-      throw new Error(
-        `HTTP error ${liteRegisterResponse.status}: ${JSON.stringify(
-          errorData
-        )}`
-      );
+        console.log("signature: ", verifySodResponseParsed.data.attributes.signature)
+        const txCallData =
+            registrationSimpleContract.contractInterface.encodeFunctionData(
+                "registerSimpleViaNoir",
+                [
+                    "0x" + RarimeUtils.getProfileKey(
+                        this.config.userConfiguration.userPrivateKey
+                    ),
+                    passportStruct,
+                    Buffer.from(verifySodResponseParsed.data.attributes.signature.slice(2), "hex"),
+                    Buffer.from(proof.proof, "hex"),
+                ]
+            );
+
+        console.log(txCallData);
+        const lite_register_request = {
+            data: {
+                tx_data: txCallData,
+                no_send: false,
+                destination: this.config.contractsConfiguration.registerSimpleContractAddress,
+            },
+        };
+        console.log(lite_register_request);
+        const liteRegisterResponse = await fetch(
+            this.config.apiConfiguration.rarimeApiUrl +
+            "/integrations/registration-relayer/v1/register",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(lite_register_request),
+            }
+        );
+
+
+        if (!liteRegisterResponse.ok) {
+            const errorData = await liteRegisterResponse.json();
+            throw new Error(
+                `HTTP error ${liteRegisterResponse.status}: ${JSON.stringify(
+                    errorData
+                )}`
+            );
+        }
+
+        const liteRegisterResponseParsed = await liteRegisterResponse.json();
+        console.log(liteRegisterResponseParsed);
+        return liteRegisterResponseParsed.data.tx_hash;
     }
-
-    const liteRegisterResponseParsed = await liteRegisterResponse.json();
-
-    return liteRegisterResponseParsed.data.tx_hash;
-  }
 }
