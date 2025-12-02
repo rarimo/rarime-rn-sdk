@@ -28,16 +28,6 @@ export class SignatureAlgorithm {
         this.type = type;
     }
 
-    public getType(): SignatureAlgorithmType {
-        return this.type;
-    }
-
-    
-    public toString(): string {
-        return this.type;
-    }
-
-    
     public static fromOID(oid: string): SignatureAlgorithm {
         switch (oid) {
             // RSA family algorithms
@@ -63,5 +53,9 @@ export class SignatureAlgorithm {
             default:
                 throw new Error(`Not supported ObjectIdentifier for signature algorithm: ${oid}`);
         }
+    }
+
+    public toString(): string {
+        return this.type;
     }
 }
