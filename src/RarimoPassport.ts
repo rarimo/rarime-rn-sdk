@@ -28,9 +28,9 @@ export type ActiveAuthKey =
     | { type: "Ecdsa"; keyBytes: Uint8Array };
 
 export enum DocumentStatus {
-    NotRegistered,
-    RegisteredWithThisPk,
-    RegisteredWithOtherPk,
+    NotRegistered = "Not Registered",
+    RegisteredWithThisPk = "Registered With This Pk",
+    RegisteredWithOtherPk = "Registered With Other Pk",
 }
 
 export interface RarimePassportProps {
