@@ -1,4 +1,4 @@
-import {JsonRpcProvider, toUtf8Bytes} from "ethers";
+import {JsonRpcProvider} from "ethers";
 import {DocumentStatus, RarimePassport} from "./RarimoPassport";
 import {RegistrationSimple, StateKeeper__factory} from "./types/contracts";
 import {NoirCircuitParams} from "./RnNoirModule";
@@ -61,17 +61,17 @@ export class Rarime {
         );
 
         const passportKey = passport.getPassportKey();
-        console.log(passportKey);
+        console.log("passportKey: ", passportKey);
 
-        const passportKeyHex = passportKey.toString(16);
+        let passportKeyHex = passportKey.toString(16).padStart(64, "0");
 
-        console.log("PassportKeyHex:", passportKeyHex);
+        if (!passportKeyHex.startsWith("0x")) {
+            passportKeyHex = "0x" + passportKeyHex;
+        }
 
-        const passportKeyBytes = toUtf8Bytes(passportKeyHex);
+        console.log("passportKeyBytes: ", passportKeyHex);
 
-        console.log(Buffer.from(passportKeyBytes).toString("hex"));
-
-        const PassportInfo = await contract.getPassportInfo(passportKeyBytes.slice(0, 32));
+        const PassportInfo = await contract.getPassportInfo(passportKeyHex);
         console.log(PassportInfo);
 
         const activeIdentity = PassportInfo?.[0].activeIdentity;
@@ -93,9 +93,9 @@ export class Rarime {
 
     public async registerIdentity(passport: RarimePassport): Promise<String> {
         const passportStatus = await this.getDocumentStatus(passport);
-        console.log(passportStatus);
+        console.log("passportStatus: ", passportStatus);
         // if (passportStatus === DocumentStatus.RegisteredWithOtherPk) {
-        //   throw new Error("This document was registred by other Private Key");
+        //     throw new Error("This document was registred by other Private Key");
         // }
 
         if (passportStatus === DocumentStatus.RegisteredWithThisPk) {
@@ -193,11 +193,14 @@ export class Rarime {
         );
 
         if (!verifySodResponse.ok) {
+            console.log('Verify sod response status', verifySodResponse.status)
             const errorData = await verifySodResponse.json();
             throw new Error(
                 `HTTP error ${verifySodResponse.status}: ${JSON.stringify(errorData)}`
             );
         }
+
+        console.log('Verify sod response status', verifySodResponse.status)
 
 
         const verifySodResponseParsed = await verifySodResponse.json();
@@ -206,25 +209,16 @@ export class Rarime {
             this.config.contractsConfiguration.registerSimpleContractAddress,
             new JsonRpcProvider(this.config.apiConfiguration.jsonRpcEvmUrl)
         );
-        console.log(proof.pub_signals[1]);
+        console.log("verifySodResponseParsed.data.attributes.public_key", verifySodResponseParsed.data.attributes.public_key);
         const passportStruct: RegistrationSimple.PassportStruct = {
             dgCommit: BigInt("0x" + proof.pub_signals[0]),
             dg1Hash: Buffer.from(proof.pub_signals[1], "hex"),
             publicKey: verifySodResponseParsed.data.attributes.public_key,
-            passportHash: Buffer.from(proof.pub_signals[2], "hex"),
+            passportHash: "0x" + passport.getPassportHash().toString(16).padStart(64, "0"),
             verifier: verifySodResponseParsed.data.attributes.verifier, //if not work strip "0x" prefix
         };
-        console.log(passportStruct);
+        console.log("passportStruct: ", passportStruct);
 
-        console.log("calldata: ", [
-            "0x" +
-            RarimeUtils.getProfileKey(
-                this.config.userConfiguration.userPrivateKey
-            ),
-            passportStruct,
-            Buffer.from(verifySodResponseParsed.data.attributes.signature, "hex"),
-            Buffer.from(proof.proof, "hex"),
-        ]);
 
         console.log("signature: ", verifySodResponseParsed.data.attributes.signature)
         const txCallData =
@@ -235,10 +229,11 @@ export class Rarime {
                         this.config.userConfiguration.userPrivateKey
                     ),
                     passportStruct,
-                    Buffer.from(verifySodResponseParsed.data.attributes.signature.slice(2), "hex"),
-                    Buffer.from(proof.proof, "hex"),
+                    verifySodResponseParsed.data.attributes.signature,
+                    "0x" + proof.proof,
                 ]
             );
+        console.log("call data: ", txCallData)
 
         console.log(txCallData);
         const lite_register_request = {
