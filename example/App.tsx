@@ -49,6 +49,11 @@ export default function App() {
                                     : {}),
                             });
 
+                            console.log("passport", passport);
+
+                            const pub_key = passport.getPassportKey();
+                            console.log("Pub key: ", pub_key);
+
                             const liteRegisterResult = await rarimo.registerIdentity(
                                 passport
                             );
