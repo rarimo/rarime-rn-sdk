@@ -4,7 +4,7 @@ import {StateKeeper} from "./types/contracts";
 import {Poseidon} from "@iden3/js-crypto";
 import {HashAlgorithm} from "./helpers/HashAlgorithm";
 import {Sod} from "./utils";
-import {SOD} from "@li0ard/tsemrtd";
+import {DG15, SOD} from "@li0ard/tsemrtd";
 import {CertificateSet} from "@peculiar/asn1-cms";
 
 export type PassportInfo = {
@@ -122,10 +122,9 @@ export class RarimePassport {
     }
 
     public getPassportKey(): bigint {
-        console.log("get pass key", this);
         if (this.dataGroup15) {
             console.log("has dg15");
-            const key = this.parseDg15Pubkey(this.dataGroup15);
+            const key = this.parseDg15Pubkey();
 
             if (key.type === "Ecdsa") {
                 return RarimePassport.extractEcdsaPassportKey(key.keyBytes);
@@ -301,66 +300,59 @@ export class RarimePassport {
         return certificates;
     }
 
-    private parseDg15Pubkey(dg15Bytes: Uint8Array): ActiveAuthKey {
-        const asn1 = asn1js.fromBER(Buffer.from(dg15Bytes));
-        if (asn1.offset === -1) throw new Error("Decoding DG15 error");
-
-        // Logic roughly matching Rust's traversal:
-        // Expected: Application 15 OR Sequence
-        // Inside: Sequence -> [AlgorithmIdentifier, BitString]
-
-        let root = asn1.result;
-
-        // Handle explicit Application 15 wrapper if present
-        if (root.idBlock.tagClass === 2 && root.idBlock.tagNumber === 15) {
-            // Application 15
-            // @ts-ignore
-            if (!root.valueBlock.value || root.valueBlock.value.length === 0)
-                throw new Error("Empty App15");
-            // @ts-ignore
-            root = root.valueBlock.value[0]; // inner sequence
+    private parseDg15Pubkey(): ActiveAuthKey {
+        if (!this.dataGroup15) {
+            throw new Error("DG15 data is not provided");
         }
 
-        // @ts-ignore
-        const seq = root.valueBlock.value;
-        if (!seq || seq.length < 2) throw new Error("Invalid DG15 structure");
+        // DG15 contains SubjectPublicKeyInfo (SPKI)
+        const spki = DG15.load(Buffer.from(this.dataGroup15));
+        const algorithmOid = spki.algorithm.algorithm; // OID string
 
-        const bitStringBlock = seq[1]; // subjectPublicKey
-        // @ts-ignore
-        const keyBytesBuf = bitStringBlock.valueBlock.valueHex;
-        const keyBytes = new Uint8Array(keyBytesBuf);
+        // BIT STRING in SPKI: first octet is 'unused bits' count (usually 0)
+        let spkBytes = new Uint8Array(spki.subjectPublicKey);
+        if (spkBytes.length > 0 && spkBytes[0] === 0x00) {
+            spkBytes = spkBytes.slice(1);
+        }
 
-        // Try to parse inner RSA structure
-        const innerAsn = asn1js.fromBER(keyBytesBuf);
-        if (
-            innerAsn.offset !== -1 &&
-            innerAsn.result.constructor.name === "Sequence"
-        ) {
-            // It is likely RSA
-            // @ts-ignore
-            const rsaInner = innerAsn.result.valueBlock.value;
-            if (rsaInner && rsaInner.length >= 2) {
-                // @ts-ignore
-                const modHex = pvutils.bufferToHexCodes(
-                    rsaInner[0].valueBlock.valueHex
-                );
-                // @ts-ignore
-                const expHex = pvutils.bufferToHexCodes(
-                    rsaInner[1].valueBlock.valueHex
-                );
-
-                return {
-                    type: "Rsa",
-                    modulus: BigInt(`0x${modHex}`),
-                    exponent: BigInt(`0x${expHex}`),
-                };
+        // RSA public key
+        if (algorithmOid === "1.2.840.113549.1.1.1") {
+            const der = spkBytes.buffer.slice(
+                spkBytes.byteOffset,
+                spkBytes.byteOffset + spkBytes.byteLength
+            );
+            const asn = asn1js.fromBER(der);
+            if (asn.offset === -1 || !(asn.result instanceof asn1js.Sequence)) {
+                throw new Error("Failed to parse RSA public key from DG15");
             }
+
+            const seq = asn.result as asn1js.Sequence;
+            const values = (seq.valueBlock as any).value as any[];
+            if (!values || values.length < 2) {
+                throw new Error("Invalid RSA public key structure");
+            }
+
+            const modulusBlock = values[0] as asn1js.Integer;
+            const exponentBlock = values[1] as asn1js.Integer;
+
+            const modBuf = Buffer.from(
+                (modulusBlock.valueBlock as any).valueHex as ArrayBuffer
+            );
+            const expBuf = Buffer.from(
+                (exponentBlock.valueBlock as any).valueHex as ArrayBuffer
+            );
+
+            const modulus = BigInt("0x" + modBuf.toString("hex"));
+            const exponent = BigInt("0x" + expBuf.toString("hex"));
+
+            return {type: "Rsa", modulus, exponent};
         }
 
-        // Default to ECDSA
-        return {
-            type: "Ecdsa",
-            keyBytes: keyBytes,
-        };
+        // EC public key (uncompressed EC point)
+        if (algorithmOid === "1.2.840.10045.2.1") {
+            return {type: "Ecdsa", keyBytes: spkBytes};
+        }
+
+        throw new Error(`Unsupported public key algorithm OID: ${algorithmOid}`);
     }
 }
