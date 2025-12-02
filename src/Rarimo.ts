@@ -9,7 +9,7 @@ import {RarimeUtils} from "./RarimeUtils";
 import {SignatureAlgorithm} from "./helpers/SignatureAlgorith";
 import {wrapPem} from "./utils";
 
-const ZERO_BYTES = new Uint8Array(32);
+const ZERO_BYTES = new Uint8Array(64);
 
 export interface RarimeUserConfiguration {
     userPrivateKey: string;
@@ -76,10 +76,10 @@ export class Rarime {
 
         const activeIdentity = PassportInfo?.[0].activeIdentity;
 
-        const ZERO_BYTES_STRING = Array.from(ZERO_BYTES)
-            .map((b) => b.toString(16).padStart(2, "0"))
+        const ZERO_BYTES_STRING = "0x" + Array.from(ZERO_BYTES)
+            .map((b) => b.toString(16))
             .join("");
-
+        console.log(ZERO_BYTES_STRING);
         if (activeIdentity === ZERO_BYTES_STRING) {
             return DocumentStatus.NotRegistered;
         }
