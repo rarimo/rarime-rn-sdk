@@ -23,9 +23,9 @@ jobs:
         run: |
           corepack enable
           pnpm install --frozen-lockfile
-          git status
+          git diff
           pnpm build
-          git status
+          git diff
           pnpm publish
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
