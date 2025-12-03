@@ -1,16 +1,10 @@
-import {Buffer} from 'buffer';
-import * as asn1js from 'asn1js';
-import {StateKeeper} from './types/contracts';
-import {Poseidon} from '@iden3/js-crypto';
-import {HashAlgorithm} from './helpers/HashAlgorithm';
-import {Sod} from './utils';
-import {DG15, SOD} from '@li0ard/tsemrtd';
-import {CertificateSet} from '@peculiar/asn1-cms';
-
-export type PassportInfo = {
-  passportInfo_: StateKeeper.PassportInfoStructOutput;
-  identityInfo_: StateKeeper.IdentityInfoStructOutput;
-};
+import {Buffer} from "buffer";
+import * as asn1js from "asn1js";
+import {Poseidon} from "@iden3/js-crypto";
+import {HashAlgorithm} from "./helpers/HashAlgorithm";
+import {Sod} from "./utils";
+import {DG15, SOD} from "@li0ard/tsemrtd";
+import {CertificateSet} from "@peculiar/asn1-cms";
 
 export interface MRZData {
   documentType: string;
@@ -24,13 +18,13 @@ export interface MRZData {
 }
 
 export type ActiveAuthKey =
-    | { type: 'Rsa'; modulus: bigint; exponent: bigint }
-    | { type: 'Ecdsa'; keyBytes: Uint8Array };
+    | { type: "Rsa"; modulus: bigint; exponent: bigint }
+    | { type: "Ecdsa"; keyBytes: Uint8Array };
 
 export enum DocumentStatus {
-  NotRegistered = 'Not Registered',
-  RegisteredWithThisPk = 'Registered With This Pk',
-  RegisteredWithOtherPk = 'Registered With Other Pk',
+    NotRegistered = "NOT_REGISTERED",
+    RegisteredWithThisPk = "REGISTERED_WITH_THIS_PK",
+    RegisteredWithOtherPk = "REGISTERED_WITH_OTHER_PK",
 }
 
 export interface RarimePassportProps {
@@ -66,21 +60,21 @@ export class RarimePassport {
 
   private static extractEcdsaPassportKey(keyBytes: Uint8Array): bigint {
     if (keyBytes.length !== 65 || keyBytes[0] !== 0x04) {
-      throw new Error('UnsupportedPassportKey: Invalid ECDSA key format');
+        throw new Error("UnsupportedPassportKey: Invalid ECDSA key format");
     }
 
     const xBytes = keyBytes.slice(1, 33);
     const yBytes = keyBytes.slice(33, 65);
 
     const xHex = Array.from(xBytes, (b) =>
-        b.toString(16).padStart(2, '0'),
-    ).join('');
+        b.toString(16).padStart(2, "0")
+    ).join("");
     const yHex = Array.from(yBytes, (b) =>
-        b.toString(16).padStart(2, '0'),
-    ).join('');
+        b.toString(16).padStart(2, "0")
+    ).join("");
 
-    const x = BigInt('0x' + xHex);
-    const y = BigInt('0x' + yHex);
+      const x = BigInt("0x" + xHex);
+      const y = BigInt("0x" + yHex);
 
     // 2^248
     const modulus = 1n << 248n;
@@ -93,13 +87,13 @@ export class RarimePassport {
 
   private static extractRsaPassportKey(
       modulus: bigint,
-      exponent: bigint,
+      exponent: bigint
   ): bigint {
     const bitLen = modulus.toString(2).length;
     const requiredBits = 200 * 4 + 224; // 1024
 
     if (bitLen < requiredBits) {
-      throw new Error('UnsupportedPassportKey: Modulus too short');
+        throw new Error("UnsupportedPassportKey: Modulus too short");
     }
 
     const shift = BigInt(bitLen - requiredBits);
@@ -123,10 +117,9 @@ export class RarimePassport {
 
   public getPassportKey(): bigint {
     if (this.dataGroup15) {
-
       const key = this.parseDg15Pubkey();
 
-      if (key.type === 'Ecdsa') {
+        if (key.type === "Ecdsa") {
         return RarimePassport.extractEcdsaPassportKey(key.keyBytes);
       } else {
         return RarimePassport.extractRsaPassportKey(key.modulus, key.exponent);
@@ -189,72 +182,72 @@ export class RarimePassport {
     const asn1Result = asn1js.fromBER(buffer);
 
     if (asn1Result.offset === -1) {
-      throw new Error('ASN1DecodeError: Failed to decode BER data');
+        throw new Error("ASN1DecodeError: Failed to decode BER data");
     }
 
     const blocks = [asn1Result.result];
 
     const app23Block = blocks.find(
-        (block) => block.idBlock.tagClass === 2 && block.idBlock.tagNumber ===
-            23,
+        (block) => block.idBlock.tagClass === 2 && block.idBlock.tagNumber === 23
     );
 
     if (!app23Block) {
-      throw new Error('Expected Application 23 SEQUENCE in the root');
+        throw new Error("Expected Application 23 SEQUENCE in the root");
     }
 
-    const seqInApp23 = (app23Block.valueBlock as any).value as asn1js.BaseBlock[];
+      const seqInApp23 = (app23Block.valueBlock as any)
+          .value as asn1js.BaseBlock[];
 
     if (!Array.isArray(seqInApp23)) {
-      throw new Error('Expected SEQUENCE inside Application 23');
+        throw new Error("Expected SEQUENCE inside Application 23");
     }
 
     const tagged0Block = seqInApp23.find(
-        (block) => block.idBlock.tagClass === 3 && block.idBlock.tagNumber ===
-            0,
+        (block) => block.idBlock.tagClass === 3 && block.idBlock.tagNumber === 0
     );
 
     if (!tagged0Block) {
-      throw new Error('No [0] tagged block found');
+        throw new Error("No [0] tagged block found");
     }
 
-    const seqInTagged0 = (tagged0Block.valueBlock as any).value as asn1js.BaseBlock[];
+      const seqInTagged0 = (tagged0Block.valueBlock as any)
+          .value as asn1js.BaseBlock[];
 
     if (!Array.isArray(seqInTagged0)) {
-      throw new Error('Expected SEQUENCE inside [0]');
+        throw new Error("Expected SEQUENCE inside [0]");
     }
 
     const setBlock = seqInTagged0.find(
-        (block) => block.idBlock.tagClass === 1 && block.idBlock.tagNumber ===
-            17,
+        (block) => block.idBlock.tagClass === 1 && block.idBlock.tagNumber === 17
     );
 
     if (!setBlock) {
-      throw new Error('No SET found inside [0] SEQUENCE');
+        throw new Error("No SET found inside [0] SEQUENCE");
     }
 
     const setContent = (setBlock.valueBlock as any).value as asn1js.BaseBlock[];
     if (!setContent || setContent.length === 0) {
-      throw new Error('SET is empty');
+        throw new Error("SET is empty");
     }
 
     const innerSeq = setContent[0];
 
     if (innerSeq.idBlock.tagNumber !== 16) {
-      throw new Error('Expected SEQUENCE as first element of SET');
+        throw new Error("Expected SEQUENCE as first element of SET");
     }
 
-    const innerSeqContent = (innerSeq.valueBlock as any).value as asn1js.BaseBlock[];
+      const innerSeqContent = (innerSeq.valueBlock as any)
+          .value as asn1js.BaseBlock[];
 
     if (!innerSeqContent || innerSeqContent.length === 0) {
-      throw new Error('Inner SEQUENCE is empty');
+        throw new Error("Inner SEQUENCE is empty");
     }
 
     const oidBlock = innerSeqContent[0];
 
     if (oidBlock.idBlock.tagNumber !== 6) {
       throw new Error(
-          'Expected ObjectIdentifier as first element of inner SEQUENCE',
+          "Expected ObjectIdentifier as first element of inner SEQUENCE"
       );
     }
 
@@ -272,8 +265,8 @@ export class RarimePassport {
     const signatureAlgorithmOID =
         sod.signatures[0].signatureAlgorithm.algorithm;
 
-    if (!signatureAlgorithmOID.startsWith('1.2.840.')) {
-      throw new Error('Signature algorithm OID does not start with 1.2.840.');
+      if (!signatureAlgorithmOID.startsWith("1.2.840.")) {
+          throw new Error("Signature algorithm OID does not start with 1.2.840.");
     }
 
     return signatureAlgorithmOID;
@@ -302,7 +295,7 @@ export class RarimePassport {
 
   private parseDg15Pubkey(): ActiveAuthKey {
     if (!this.dataGroup15) {
-      throw new Error('DG15 data is not provided');
+        throw new Error("DG15 data is not provided");
     }
 
     // DG15 contains SubjectPublicKeyInfo (SPKI)
@@ -316,41 +309,41 @@ export class RarimePassport {
     }
 
     // RSA public key
-    if (algorithmOid === '1.2.840.113549.1.1.1') {
+      if (algorithmOid === "1.2.840.113549.1.1.1") {
       const der = spkBytes.buffer.slice(
           spkBytes.byteOffset,
-          spkBytes.byteOffset + spkBytes.byteLength,
+          spkBytes.byteOffset + spkBytes.byteLength
       );
       const asn = asn1js.fromBER(der);
       if (asn.offset === -1 || !(asn.result instanceof asn1js.Sequence)) {
-        throw new Error('Failed to parse RSA public key from DG15');
+          throw new Error("Failed to parse RSA public key from DG15");
       }
 
       const seq = asn.result as asn1js.Sequence;
       const values = (seq.valueBlock as any).value as any[];
       if (!values || values.length < 2) {
-        throw new Error('Invalid RSA public key structure');
+          throw new Error("Invalid RSA public key structure");
       }
 
       const modulusBlock = values[0] as asn1js.Integer;
       const exponentBlock = values[1] as asn1js.Integer;
 
       const modBuf = Buffer.from(
-          (modulusBlock.valueBlock as any).valueHex as ArrayBuffer,
+          (modulusBlock.valueBlock as any).valueHex as ArrayBuffer
       );
       const expBuf = Buffer.from(
-          (exponentBlock.valueBlock as any).valueHex as ArrayBuffer,
+          (exponentBlock.valueBlock as any).valueHex as ArrayBuffer
       );
 
-      const modulus = BigInt('0x' + modBuf.toString('hex'));
-      const exponent = BigInt('0x' + expBuf.toString('hex'));
+          const modulus = BigInt("0x" + modBuf.toString("hex"));
+          const exponent = BigInt("0x" + expBuf.toString("hex"));
 
-      return {type: 'Rsa', modulus, exponent};
+          return {type: "Rsa", modulus, exponent};
     }
 
     // EC public key (uncompressed EC point)
-    if (algorithmOid === '1.2.840.10045.2.1') {
-      return {type: 'Ecdsa', keyBytes: spkBytes};
+      if (algorithmOid === "1.2.840.10045.2.1") {
+          return {type: "Ecdsa", keyBytes: spkBytes};
     }
 
     throw new Error(`Unsupported public key algorithm OID: ${algorithmOid}`);
