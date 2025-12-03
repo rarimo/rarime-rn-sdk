@@ -1,3 +1,3 @@
-export * from './Rarimo';
+export * from './Rarime';
 export * from './RarimeUtils';
-export * from './RarimoPassport';
+export * from './RarimePassport';

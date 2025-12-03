@@ -21,6 +21,7 @@
     "expo",
     "@rarimo/rarime-rn-sdk",
     "RarimoSDK"
+    "RarimeSDK"
   ],
   "repository": "https://github.com/rarimo/rarime-rn-sdk",
   "bugs": {

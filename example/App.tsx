@@ -28,7 +28,7 @@ export default function App() {
 
                   console.log(userPrivateKey);
 
-                  const rarimoConfig: RarimeConfiguration = {
+                  const rarimeConfig: RarimeConfiguration = {
                     contractsConfiguration: {
                       stateKeeperAddress:
                           '0x12883d5F530AF7EC2adD7cEC29Cf84215efCf4D8',
@@ -46,9 +46,9 @@ export default function App() {
                     },
                   };
 
-                  console.log(rarimoConfig);
+                  console.log(rarimeConfig);
 
-                  const rarimo = new Rarime(rarimoConfig);
+                  const rarime = new Rarime(rarimeConfig);
 
                   const passport = new RarimePassport({
                     dataGroup1: DG1 ? Buffer.from(DG1, 'base64') : Buffer.from(
@@ -65,7 +65,7 @@ export default function App() {
                   const pub_key = passport.getPassportKey();
                   console.log('Pub key: ', pub_key);
 
-                  const liteRegisterResult = await rarimo.registerIdentity(
+                  const liteRegisterResult = await rarime.registerIdentity(
                       passport,
                   );
                   console.log('liteRegisterResult', liteRegisterResult);
