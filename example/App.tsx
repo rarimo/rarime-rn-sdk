@@ -21,6 +21,8 @@ export default function App() {
                                     ? PRIVATE_KEY
                                     : RarimeUtils.generateBJJPrivateKey();
 
+                            console.log(userPrivateKey);
+
                             const rarimoConfig: RarimeConfiguration = {
                                 contractsConfiguration: {
                                     stateKeeperAddress:
@@ -38,6 +40,8 @@ export default function App() {
                                     userPrivateKey: userPrivateKey,
                                 },
                             };
+
+                            console.log(rarimoConfig);
 
                             const rarimo = new Rarime(rarimoConfig);
 
