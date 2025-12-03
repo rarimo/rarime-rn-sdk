@@ -1,11 +1,6 @@
 import {SOD} from '@li0ard/tsemrtd';
 import {LDSObject} from '@li0ard/tsemrtd/dist/asn1/sod';
-import {
-  ContentInfo,
-  id_signedData,
-  SignedData,
-  SignerInfos,
-} from '@peculiar/asn1-cms';
+import {ContentInfo, id_signedData, SignedData, SignerInfos,} from '@peculiar/asn1-cms';
 import {AsnConvert, AsnSerializer} from '@peculiar/asn1-schema';
 import {fromBER, Set} from 'asn1js';
 import {Buffer} from 'buffer';
@@ -156,8 +151,7 @@ export class Sod {
   //     `Unsupported public key algorithm: ${this.slaveCert.signatureAlgorithm.algorithm}`,
   //   )
   // }
-
-  /** Works */
+    // /** Works */
 //   static getSlaveCertIcaoMemberKey(masterCert: Certificate): Uint8Array {
 //     return extractRawPubKey(masterCert)
 //   }
