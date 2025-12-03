@@ -19,7 +19,11 @@ config.resolver.nodeModulesPaths = [
 ];
 
 config.resolver.extraNodeModules = {
-  '@rarimo/rarime-rn-sdk': '..',
+  crypto: require.resolve('crypto-browserify'),
+  stream: require.resolve('readable-stream'),
+  buffer: require.resolve('buffer/'),
+    // Map the local SDK package name to the monorepo root so Metro can resolve it
+    '@rarimo/rarime-rn-sdk': path.resolve(__dirname, '..'),
 };
 
 config.watchFolders = [path.resolve(__dirname, '..')];

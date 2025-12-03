@@ -1,1 +1,3 @@
-export { default } from './RnNoirModule'
+export * from './Rarime';
+export * from './RarimeUtils';
+export * from './RarimePassport';

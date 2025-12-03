@@ -4,25 +4,34 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "prebuild": "expo prebuild --clean && npx pod-install"
+    "prebuild": "npx expo prebuild --clean && npx pod-install",
+    "start": "npx expo start --clear",
+    "android": "npx expo run:android --device",
+    "ios": "npx expo run:ios --device",
+    "web": "expo start --web"
   },
   "dependencies": {
+    "@babel/core": "^7.24.6",
+    "babel-plugin-module-resolver": "^5.0.2",
+    "babel-preset-expo": "~12.0.3",
     "expo": "~54.0.25",
     "react": "19.1.0",
     "react-native": "0.81.5"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.1",
+    "react-native-get-random-values": "^2.0.0",
+    "react-native-url-polyfill": "^3.0.0",
+    "readable-stream": "^4.7.0",
+    "react-native-dotenv": "^3.4.11",
     "typescript": "~5.9.2"
   },
   "private": true,
   "expo": {
     "autolinking": {
-      "nativeModulesDir": ".."
+      "nativeModulesDir": "../../"
     }
   }
 }
