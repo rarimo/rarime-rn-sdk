@@ -10,9 +10,9 @@ Powered by the **Expo Modules**.
 
 ## ✨ Features
 
-* **Cross-Platform Support** – Works natively on both iOS and Android via Expo Modules.
-* **Zero-Knowledge Proofs** – Efficient client-side generation of ZK proofs (Noir) for identity verification.
-* **Passport Interaction** – Tools for handling and verifying passport data securely.
+- **Cross-Platform Support** – Works natively on both iOS and Android via Expo Modules.
+- **Zero-Knowledge Proofs** – Efficient client-side generation of ZK proofs (Noir) for identity verification.
+- **Passport Interaction** – Tools for handling and verifying passport data securely.
 
 ---
 
@@ -38,7 +38,7 @@ No extra steps are usually required if you are using the latest Expo SDK. Simply
 npx expo prebuild
 npx expo run:ios
 # or
-each Expo Modulesnpx expo run:android
+npx expo run:android
 ```
 
 #### For Bare React Native Projects
@@ -107,8 +107,8 @@ onPress = {async() => {
          */
         const documentStatus: DocumentStatus = await rarime.getDocumentStatus(passport);
 
-        /**Light registration
-         *Returned hash of register transaction from blockchain
+        /** Light registration
+         * Returned hash of register transaction from blockchain
          *
          *  Performs a zero-knowledge proof generation based on the provided query parameters.
          *
@@ -144,7 +144,7 @@ We support two chains:
 ## API Addresses
 
 | Name                 | MainNet Address               | TestNet Address                         |
-|----------------------|-------------------------------|-----------------------------------------|
+| -------------------- | ----------------------------- | --------------------------------------- |
 | `JSON_RPC_URL`       | `https://l2.rarimo.com`       | `https://rpc.qtestnet.org`              |
 | `API_URL`            | `https://api.app.rarime.com`  | `https://api.orgs.app.stage.rarime.com` |
 | `IPFS_URL`           | `https://ipfs.rarimo.com `    | `https://ipfs.rarimo.com `              |
@@ -157,7 +157,7 @@ We support two chains:
 ## Contract Addresses
 
 | Name                              | MainNet Address                              | TestNet Address                              |
-|-----------------------------------|----------------------------------------------|----------------------------------------------|
+| --------------------------------- | -------------------------------------------- | -------------------------------------------- |
 | `STATE_KEEPER_CONTRACT_ADDRESS`   | `0x61aa5b68D811884dA4FEC2De4a7AA0464df166E1` | `0x12883d5F530AF7EC2adD7cEC29Cf84215efCf4D8` |
 | `REGISTER_CONTRACT_ADDRESS`       | `0x497D6957729d3a39D43843BD27E6cbD12310F273` | `0x1b6ae4b80F0f26DC53731D1d7aA31fc3996B513B` |
 | `POSEIDON_SMT_ADDRESS`            | `0x479F84502Db545FA8d2275372E0582425204A879` | `0xb8bAac4C443097d697F87CC35C5d6B06dDe64D60` |
@@ -175,16 +175,19 @@ Contributions are very welcome! Please follow the guidelines described in the co
    ```bash
    git checkout -b feature/amazing-feature
    ```
+
 3. Commit your changes:
 
    ```bash
    git commit -m "Add some amazing feature"
    ```
+
 4. Push to the branch:
 
    ```bash
    git push origin feature/amazing-feature
    ```
+
 5. Open a Pull Request
 
 ---
@@ -196,6 +199,6 @@ This project is licensed under the **[MIT License](./LICENSE)**.
 ## 💬 Community
 
 We encourage open collaboration — discussions, suggestions, and feedback are always welcome!  
-Join us in improving the Rust ecosystem around the Rarimo protocol.
+Join us in improving the React Native and JavaScript/TypeScript ecosystem around the Rarimo protocol.
 
 **Telegram:** [Join Rarimo Community](https://t.me/+pWugh5xgDiE3Y2Jk)
