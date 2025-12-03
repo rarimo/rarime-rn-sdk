@@ -123,7 +123,7 @@ export class RarimePassport {
 
     public getPassportKey(): bigint {
         if (this.dataGroup15) {
-            console.log("has dg15");
+
             const key = this.parseDg15Pubkey();
 
             if (key.type === "Ecdsa") {
@@ -132,15 +132,15 @@ export class RarimePassport {
                 return RarimePassport.extractRsaPassportKey(key.modulus, key.exponent);
             }
         }
-        console.log("no dg15");
+
         return this.getPassportHash();
     }
 
     public getPassportHash(): bigint {
         const signedAttributes = this.extractSignedAttributes();
-        console.log("signed attr", signedAttributes);
+
         let hashBlock = HashAlgorithm.fromOID(this.getSignatureAlgorithm());
-        console.log("hash block", hashBlock);
+
         let hashBytes = hashBlock.getHashFixed32(signedAttributes);
 
         let out = 0n;
@@ -271,7 +271,7 @@ export class RarimePassport {
 
         const signatureAlgorithmOID =
             sod.signatures[0].signatureAlgorithm.algorithm;
-        console.log(signatureAlgorithmOID);
+
         if (!signatureAlgorithmOID.startsWith("1.2.840.")) {
             throw new Error("Signature algorithm OID does not start with 1.2.840.");
         }
