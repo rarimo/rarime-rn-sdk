@@ -1,31 +1,204 @@
-# @rarimo/rarime-rn-sdk
+# Rarime React Native SDK
 
-rn module to noir prove
+React Native integration SDK for the **Rarimo protocol**, enabling seamless ZK identity verification and passport
+interaction
+on **iOS and Android**.
 
+Powered by the **Expo Modules**.
 
-# Installation in managed Expo projects
+---
 
-For [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](#api-documentation). If you follow the link and there is no documentation available then this library is not yet usable within managed projects &mdash; it is likely to be included in an upcoming Expo SDK release.
+## ✨ Features
 
-# Installation in bare React Native projects
+- **Cross-Platform Support** – Works natively on both iOS and Android via Expo Modules.
+- **Zero-Knowledge Proofs** – Efficient client-side generation of ZK proofs (Noir) for identity verification.
+- **Passport Interaction** – Tools for handling and verifying passport data securely.
 
-For bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.
+---
 
-### Add the package to your npm dependencies
+## 📦 Installation
 
-```
+### Prerequisites
+
+This library includes native code. You generally need to use a Development Build if you are using Expo.
+
+### 1. Install the package
+
+```bash
 npm install @rarimo/rarime-rn-sdk
 ```
 
-### Configure for Android
+### 2. Configuration
 
+#### For Managed Expo Projects
 
+No extra steps are usually required if you are using the latest Expo SDK. Simply rebuild your development client:
 
+```bash
+npx expo prebuild
+npx expo run:ios
+# or
+npx expo run:android
+```
 
-### Configure for iOS
+#### For Bare React Native Projects
 
-Run `npx pod-install` after installing the npm package.
+Ensure you have installed and configured the **expo** package.
 
-# Contributing
+**iOS:** Run `pod install` in the `ios` directory:
 
-Contributions are very welcome! Please refer to guidelines described in the [contributing guide]( https://github.com/expo/expo#contributing).
+```bash
+cd ios && pod install
+```
+
+---
+
+## 🚀 Example Usage
+
+Below is an example of how to initialize the SDK and generate a proof.
+
+```ts
+import * from '@rarimo/rarime-rn-sdk';
+
+onPress = {async() => {
+    try {
+        /** Generate private key for user */
+        const userPrivateKey: string = RarimeUtils.generateBJJPrivateKey();
+
+        /** Setup configuration */
+        const rarimeConfiguration: RarimeConfiguration = {
+            contractsConfiguration: {
+                stateKeeperAddress:
+                    '<STATE_KEEPER_CONTRACT_ADDRESS>',
+                registerSimpleContractAddress:
+                    '<REGISTER_CONTRACT_ADDRESS>',
+                poseidonSmtAddress:
+                    '<POSEIDON_SMT_ADDRESS>',
+            },
+            apiConfiguration: {
+                jsonRpcEvmUrl: '<JSON_RPC_URL>',
+                rarimeApiUrl: '<API_URL>',
+            },
+            userConfiguration: {
+                userPrivateKey: RarimeUtils.generateBJJPrivateKey(),
+            },
+        };
+
+        /** Setup SDK */
+        const rarime = new Rarime(rarimeConfiguration);
+
+        /** Setup passport */
+        const passport = new RarimePassport({
+                dataGroup1: Uint8Array;
+                sod: Uint8Array;
+                dataGroup15? : Uint8Array;
+                aaSignature? : Uint8Array;
+                aaChallenge? : Uint8Array;
+            })
+        ;
+
+        /**
+         * Checks the passport registration status.
+         *
+         * Possible statuses:
+         * - NOT_REGISTERED – the document is not registered.
+         * - REGISTERED_WITH_THIS_PK – the document is registered with this user's private key.
+         * - REGISTERED_WITH_OTHER_PK – the document is registered with a different user's private key.
+         */
+        const documentStatus: DocumentStatus = await rarime.getDocumentStatus(passport);
+
+        /** Light registration
+         * Returned hash of register transaction from blockchain
+         *
+         *  Performs a zero-knowledge proof generation based on the provided query parameters.
+         *
+         * ⚠️ This is a computationally intensive cryptographic operation.
+         * Expected execution time: up to ~5 seconds depending on hardware.
+         * Memory usage may be significant (hundreds of MB or more).
+         */
+        const registerTxHash = await rarime.registerIdentity(
+            passport,
+        );
+
+    } catch (e) {
+        console.error(e);
+        alert('Error: ' + (e as Error).message);
+        setBusy(false);
+    }
+}
+```
+
+---
+
+## ⚙️ Configuration & Constants
+
+We support two chains:
+
+- **MainNet** — for releases and production use
+- **TestNet** — for development and testing
+
+> **Note:** You can also use your own addresses and resources.
+
+---
+
+## API Addresses
+
+| Name                 | MainNet Address               | TestNet Address                         |
+| -------------------- | ----------------------------- | --------------------------------------- |
+| `JSON_RPC_URL`       | `https://l2.rarimo.com`       | `https://rpc.qtestnet.org`              |
+| `API_URL`            | `https://api.app.rarime.com`  | `https://api.orgs.app.stage.rarime.com` |
+| `IPFS_URL`           | `https://ipfs.rarimo.com `    | `https://ipfs.rarimo.com `              |
+| `VOTING_RELAYER_URL` | `https://api.freedomtool.org` | `https://api.stage.freedomtool.org`     |
+| `FREEDOMTOOL_URL`    | `https://freedomtool.org`     | `https://stage.voting.freedomtool.org/` |
+| `VOUTING_RPC_URL`    | `https://l2.rarimo.com`       | `https://rpc.qtestnet.org`              |
+
+---
+
+## Contract Addresses
+
+| Name                              | MainNet Address                              | TestNet Address                              |
+| --------------------------------- | -------------------------------------------- | -------------------------------------------- |
+| `STATE_KEEPER_CONTRACT_ADDRESS`   | `0x61aa5b68D811884dA4FEC2De4a7AA0464df166E1` | `0x12883d5F530AF7EC2adD7cEC29Cf84215efCf4D8` |
+| `REGISTER_CONTRACT_ADDRESS`       | `0x497D6957729d3a39D43843BD27E6cbD12310F273` | `0x1b6ae4b80F0f26DC53731D1d7aA31fc3996B513B` |
+| `POSEIDON_SMT_ADDRESS`            | `0x479F84502Db545FA8d2275372E0582425204A879` | `0xb8bAac4C443097d697F87CC35C5d6B06dDe64D60` |
+| `PROPOSAL_STATE_CONTRACT_ADDRESS` | `0x9C4b84a940C9D3140a1F40859b3d4367DC8d099a` | `0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b` |
+
+---
+
+## 🤝 Contributing
+
+Contributions are very welcome! Please follow the guidelines described in the contributing guide.
+
+1. Fork the repository
+2. Create your feature branch:
+
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+
+3. Commit your changes:
+
+   ```bash
+   git commit -m "Add some amazing feature"
+   ```
+
+4. Push to the branch:
+
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+
+5. Open a Pull Request
+
+---
+
+## 📝 License
+
+This project is licensed under the **[MIT License](./LICENSE)**.
+
+## 💬 Community
+
+We encourage open collaboration — discussions, suggestions, and feedback are always welcome!  
+Join us in improving the React Native and JavaScript/TypeScript ecosystem around the Rarimo protocol.
+
+**Telegram:** [Join Rarimo Community](https://t.me/+pWugh5xgDiE3Y2Jk)
