@@ -1,6 +1,7 @@
 # Rarime React Native SDK
 
-React Native bindings for the **Rarimo protocol**, enabling seamless ZK identity verification and passport interaction
+React Native integration SDK for the **Rarimo protocol**, enabling seamless ZK identity verification and passport
+interaction
 on **iOS and Android**.
 
 Powered by the **Expo Modules**.
@@ -12,7 +13,6 @@ Powered by the **Expo Modules**.
 * **Cross-Platform Support** – Works natively on both iOS and Android via Expo Modules.
 * **Zero-Knowledge Proofs** – Efficient client-side generation of ZK proofs (Noir) for identity verification.
 * **Passport Interaction** – Tools for handling and verifying passport data securely.
-* **High Performance** – Leverages the speed and safety of the underlying Rust core.
 
 ---
 
@@ -87,7 +87,7 @@ onPress = {async()
     };
 
     /** Setup SDK */
-    const rarimo = new Rarime(rarimoConfig);
+    const rarime = new Rarime(rarimoConfig);
 
     /** Setup passport */
     const passport = new RarimePassport({
@@ -103,11 +103,11 @@ onPress = {async()
      * Checks the passport registration status.
      *
      * Possible statuses:
-     * - NotRegistered – the document is not registered.
-     * - RegisteredWithThisPk – the document is registered with this user's private key.
-     * - RegisteredWithOtherPk – the document is registered with a different user's private key.
+     * - NOT_REGISTERED – the document is not registered.
+     * - REGISTERED_WITH_THIS_PK – the document is registered with this user's private key.
+     * - REGISTERED_WITH_OTHER_PK – the document is registered with a different user's private key.
      */
-    const documentStatus: DocumentStatus = await rarimo.getDocumentStatus(passport);
+    const documentStatus: DocumentStatus = await rarime.getDocumentStatus(passport);
 
     /**Light registration
      *Returned hash of register transaction from blockchain
@@ -118,7 +118,7 @@ onPress = {async()
      * Expected execution time: up to ~5 seconds depending on hardware.
      * Memory usage may be significant (hundreds of MB or more).
      */
-    const registerTxHash = await rarimo.registerIdentity(
+    const registerTxHash = await rarime.registerIdentity(
         passport,
     );
 
