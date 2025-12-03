@@ -2,6 +2,8 @@ name: Publish to NPM
 
 on:
   push:
+    branches:
+      - test/ci
     tags:
       - 'v?[0-9]+.[0-9]+.[0-9]+'
       - 'v?[0-9]+.[0-9]+.[0-9]+-[0-9]+'
@@ -21,7 +23,9 @@ jobs:
         run: |
           corepack enable
           pnpm install --frozen-lockfile
+          git status
           pnpm build
+          git status
           pnpm publish
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
