@@ -58,75 +58,73 @@ cd ios && pod install
 Below is an example of how to initialize the SDK and generate a proof.
 
 ```ts
-import {DocumentStatus} from './RarimoPassport';
+import * from '@rarimo/rarime-rn-sdk';
 
-onPress = {async()
-=>
-{
-  try {
-    /** Generate private key for user */
-    const userPrivateKey: string = RarimeUtils.generateBJJPrivateKey();
+onPress = {async() => {
+    try {
+        /** Generate private key for user */
+        const userPrivateKey: string = RarimeUtils.generateBJJPrivateKey();
 
-    /** Setup configuration */
-    const rarimoConfiguration: RarimeConfiguration = {
-      contractsConfiguration: {
-        stateKeeperAddress:
-            '<STATE_KEEPER_CONTRACT_ADDRESS>',
-        registerSimpleContractAddress:
-            '<REGISTER_CONTRACT_ADDRESS>',
-        poseidonSmtAddress:
-            '<POSEIDON_SMT_ADDRESS>',
-      },
-      apiConfiguration: {
-        jsonRpcEvmUrl: '<JSON_RPC_URL>',
-        rarimeApiUrl: '<API_URL>',
-      },
-      userConfiguration: {
-        userPrivateKey: RarimeUtils.generateBJJPrivateKey(),
-      },
-    };
+        /** Setup configuration */
+        const rarimeConfiguration: RarimeConfiguration = {
+            contractsConfiguration: {
+                stateKeeperAddress:
+                    '<STATE_KEEPER_CONTRACT_ADDRESS>',
+                registerSimpleContractAddress:
+                    '<REGISTER_CONTRACT_ADDRESS>',
+                poseidonSmtAddress:
+                    '<POSEIDON_SMT_ADDRESS>',
+            },
+            apiConfiguration: {
+                jsonRpcEvmUrl: '<JSON_RPC_URL>',
+                rarimeApiUrl: '<API_URL>',
+            },
+            userConfiguration: {
+                userPrivateKey: RarimeUtils.generateBJJPrivateKey(),
+            },
+        };
 
-    /** Setup SDK */
-    const rarime = new Rarime(rarimoConfig);
+        /** Setup SDK */
+        const rarime = new Rarime(rarimeConfiguration);
 
-    /** Setup passport */
-    const passport = new RarimePassport({
-          dataGroup1: Uint8Array;
-          sod: Uint8Array;
-          dataGroup15? : Uint8Array;
-          aaSignature? : Uint8Array;
-          aaChallenge? : Uint8Array;
-        })
-    ;
+        /** Setup passport */
+        const passport = new RarimePassport({
+                dataGroup1: Uint8Array;
+                sod: Uint8Array;
+                dataGroup15? : Uint8Array;
+                aaSignature? : Uint8Array;
+                aaChallenge? : Uint8Array;
+            })
+        ;
 
-    /**
-     * Checks the passport registration status.
-     *
-     * Possible statuses:
-     * - NOT_REGISTERED – the document is not registered.
-     * - REGISTERED_WITH_THIS_PK – the document is registered with this user's private key.
-     * - REGISTERED_WITH_OTHER_PK – the document is registered with a different user's private key.
-     */
-    const documentStatus: DocumentStatus = await rarime.getDocumentStatus(passport);
+        /**
+         * Checks the passport registration status.
+         *
+         * Possible statuses:
+         * - NOT_REGISTERED – the document is not registered.
+         * - REGISTERED_WITH_THIS_PK – the document is registered with this user's private key.
+         * - REGISTERED_WITH_OTHER_PK – the document is registered with a different user's private key.
+         */
+        const documentStatus: DocumentStatus = await rarime.getDocumentStatus(passport);
 
-    /**Light registration
-     *Returned hash of register transaction from blockchain
-     *
-     *  Performs a zero-knowledge proof generation based on the provided query parameters.
-     *
-     * ⚠️ This is a computationally intensive cryptographic operation.
-     * Expected execution time: up to ~5 seconds depending on hardware.
-     * Memory usage may be significant (hundreds of MB or more).
-     */
-    const registerTxHash = await rarime.registerIdentity(
-        passport,
-    );
+        /**Light registration
+         *Returned hash of register transaction from blockchain
+         *
+         *  Performs a zero-knowledge proof generation based on the provided query parameters.
+         *
+         * ⚠️ This is a computationally intensive cryptographic operation.
+         * Expected execution time: up to ~5 seconds depending on hardware.
+         * Memory usage may be significant (hundreds of MB or more).
+         */
+        const registerTxHash = await rarime.registerIdentity(
+            passport,
+        );
 
-  } catch (e) {
-    console.error(e);
-    alert('Error: ' + (e as Error).message);
-    setBusy(false);
-  }
+    } catch (e) {
+        console.error(e);
+        alert('Error: ' + (e as Error).message);
+        setBusy(false);
+    }
 }
 ```
 
