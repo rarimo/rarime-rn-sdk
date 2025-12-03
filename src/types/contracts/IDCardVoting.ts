@@ -2,26 +2,26 @@
 /* tslint:disable */
 /* eslint-disable */
 import type {
+  AddressLike,
   BaseContract,
   BigNumberish,
   BytesLike,
-  FunctionFragment,
-  Result,
-  Interface,
-  EventFragment,
-  AddressLike,
-  ContractRunner,
   ContractMethod,
+  ContractRunner,
+  EventFragment,
+  FunctionFragment,
+  Interface,
   Listener,
-} from "ethers";
+  Result,
+} from 'ethers';
 import type {
   TypedContractEvent,
+  TypedContractMethod,
   TypedDeferredTopicFilter,
   TypedEventLog,
-  TypedLogDescription,
   TypedListener,
-  TypedContractMethod,
-} from "./common";
+  TypedLogDescription,
+} from './common';
 
 export declare namespace AQueryProofExecutor {
   export type ProofPointsStruct = {
@@ -76,194 +76,232 @@ export declare namespace BaseVoting {
 
 export interface IDCardVotingInterface extends Interface {
   getFunction(
-    nameOrSignature:
-      | "IDENTITY_LIMIT"
-      | "__IDCardVoting_init"
-      | "execute"
-      | "executeNoir"
-      | "executeTD1"
-      | "executeTD1Noir"
-      | "getProposalRules"
-      | "getPublicSignals"
-      | "getPublicSignalsTD1"
-      | "getRegistrationSMT"
-      | "getVerifier"
-      | "implementation"
-      | "owner"
-      | "proposalsState"
-      | "proxiableUUID"
-      | "renounceOwnership"
-      | "transferOwnership"
-      | "upgradeTo"
-      | "upgradeToAndCall"
+      nameOrSignature:
+          | 'IDENTITY_LIMIT'
+          | '__IDCardVoting_init'
+          | 'execute'
+          | 'executeNoir'
+          | 'executeTD1'
+          | 'executeTD1Noir'
+          | 'getProposalRules'
+          | 'getPublicSignals'
+          | 'getPublicSignalsTD1'
+          | 'getRegistrationSMT'
+          | 'getVerifier'
+          | 'implementation'
+          | 'owner'
+          | 'proposalsState'
+          | 'proxiableUUID'
+          | 'renounceOwnership'
+          | 'transferOwnership'
+          | 'upgradeTo'
+          | 'upgradeToAndCall',
   ): FunctionFragment;
 
   getEvent(
-    nameOrSignatureOrTopic:
-      | "AdminChanged"
-      | "BeaconUpgraded"
-      | "Initialized"
-      | "OwnershipTransferred"
-      | "Upgraded"
+      nameOrSignatureOrTopic:
+          | 'AdminChanged'
+          | 'BeaconUpgraded'
+          | 'Initialized'
+          | 'OwnershipTransferred'
+          | 'Upgraded',
   ): EventFragment;
 
   encodeFunctionData(
-    functionFragment: "IDENTITY_LIMIT",
-    values?: undefined
+      functionFragment: 'IDENTITY_LIMIT',
+      values?: undefined,
   ): string;
+
   encodeFunctionData(
-    functionFragment: "__IDCardVoting_init",
-    values: [AddressLike, AddressLike, AddressLike]
+      functionFragment: '__IDCardVoting_init',
+      values: [AddressLike, AddressLike, AddressLike],
   ): string;
+
   encodeFunctionData(
-    functionFragment: "execute",
-    values: [
-      BytesLike,
-      BigNumberish,
-      BytesLike,
-      AQueryProofExecutor.ProofPointsStruct
-    ]
+      functionFragment: 'execute',
+      values: [
+        BytesLike,
+        BigNumberish,
+        BytesLike,
+        AQueryProofExecutor.ProofPointsStruct
+      ],
   ): string;
+
   encodeFunctionData(
-    functionFragment: "executeNoir",
-    values: [BytesLike, BigNumberish, BytesLike, BytesLike]
+      functionFragment: 'executeNoir',
+      values: [BytesLike, BigNumberish, BytesLike, BytesLike],
   ): string;
+
   encodeFunctionData(
-    functionFragment: "executeTD1",
-    values: [
-      BytesLike,
-      BigNumberish,
-      BytesLike,
-      AQueryProofExecutor.ProofPointsStruct
-    ]
+      functionFragment: 'executeTD1',
+      values: [
+        BytesLike,
+        BigNumberish,
+        BytesLike,
+        AQueryProofExecutor.ProofPointsStruct
+      ],
   ): string;
+
   encodeFunctionData(
-    functionFragment: "executeTD1Noir",
-    values: [BytesLike, BigNumberish, BytesLike, BytesLike]
+      functionFragment: 'executeTD1Noir',
+      values: [BytesLike, BigNumberish, BytesLike, BytesLike],
   ): string;
+
   encodeFunctionData(
-    functionFragment: "getProposalRules",
-    values: [BigNumberish]
+      functionFragment: 'getProposalRules',
+      values: [BigNumberish],
   ): string;
+
   encodeFunctionData(
-    functionFragment: "getPublicSignals",
-    values: [BytesLike, BigNumberish, BytesLike]
+      functionFragment: 'getPublicSignals',
+      values: [BytesLike, BigNumberish, BytesLike],
   ): string;
+
   encodeFunctionData(
-    functionFragment: "getPublicSignalsTD1",
-    values: [BytesLike, BigNumberish, BytesLike]
+      functionFragment: 'getPublicSignalsTD1',
+      values: [BytesLike, BigNumberish, BytesLike],
   ): string;
+
   encodeFunctionData(
-    functionFragment: "getRegistrationSMT",
-    values?: undefined
+      functionFragment: 'getRegistrationSMT',
+      values?: undefined,
   ): string;
+
   encodeFunctionData(
-    functionFragment: "getVerifier",
-    values?: undefined
+      functionFragment: 'getVerifier',
+      values?: undefined,
   ): string;
+
   encodeFunctionData(
-    functionFragment: "implementation",
-    values?: undefined
+      functionFragment: 'implementation',
+      values?: undefined,
   ): string;
-  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+
+  encodeFunctionData(functionFragment: 'owner', values?: undefined): string;
+
   encodeFunctionData(
-    functionFragment: "proposalsState",
-    values?: undefined
+      functionFragment: 'proposalsState',
+      values?: undefined,
   ): string;
+
   encodeFunctionData(
-    functionFragment: "proxiableUUID",
-    values?: undefined
+      functionFragment: 'proxiableUUID',
+      values?: undefined,
   ): string;
+
   encodeFunctionData(
-    functionFragment: "renounceOwnership",
-    values?: undefined
+      functionFragment: 'renounceOwnership',
+      values?: undefined,
   ): string;
+
   encodeFunctionData(
-    functionFragment: "transferOwnership",
-    values: [AddressLike]
+      functionFragment: 'transferOwnership',
+      values: [AddressLike],
   ): string;
+
   encodeFunctionData(
-    functionFragment: "upgradeTo",
-    values: [AddressLike]
+      functionFragment: 'upgradeTo',
+      values: [AddressLike],
   ): string;
+
   encodeFunctionData(
-    functionFragment: "upgradeToAndCall",
-    values: [AddressLike, BytesLike]
+      functionFragment: 'upgradeToAndCall',
+      values: [AddressLike, BytesLike],
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "IDENTITY_LIMIT",
-    data: BytesLike
+      functionFragment: 'IDENTITY_LIMIT',
+      data: BytesLike,
   ): Result;
+
   decodeFunctionResult(
-    functionFragment: "__IDCardVoting_init",
-    data: BytesLike
+      functionFragment: '__IDCardVoting_init',
+      data: BytesLike,
   ): Result;
-  decodeFunctionResult(functionFragment: "execute", data: BytesLike): Result;
+
+  decodeFunctionResult(functionFragment: 'execute', data: BytesLike): Result;
+
   decodeFunctionResult(
-    functionFragment: "executeNoir",
-    data: BytesLike
+      functionFragment: 'executeNoir',
+      data: BytesLike,
   ): Result;
-  decodeFunctionResult(functionFragment: "executeTD1", data: BytesLike): Result;
+
+  decodeFunctionResult(functionFragment: 'executeTD1', data: BytesLike): Result;
+
   decodeFunctionResult(
-    functionFragment: "executeTD1Noir",
-    data: BytesLike
+      functionFragment: 'executeTD1Noir',
+      data: BytesLike,
   ): Result;
+
   decodeFunctionResult(
-    functionFragment: "getProposalRules",
-    data: BytesLike
+      functionFragment: 'getProposalRules',
+      data: BytesLike,
   ): Result;
+
   decodeFunctionResult(
-    functionFragment: "getPublicSignals",
-    data: BytesLike
+      functionFragment: 'getPublicSignals',
+      data: BytesLike,
   ): Result;
+
   decodeFunctionResult(
-    functionFragment: "getPublicSignalsTD1",
-    data: BytesLike
+      functionFragment: 'getPublicSignalsTD1',
+      data: BytesLike,
   ): Result;
+
   decodeFunctionResult(
-    functionFragment: "getRegistrationSMT",
-    data: BytesLike
+      functionFragment: 'getRegistrationSMT',
+      data: BytesLike,
   ): Result;
+
   decodeFunctionResult(
-    functionFragment: "getVerifier",
-    data: BytesLike
+      functionFragment: 'getVerifier',
+      data: BytesLike,
   ): Result;
+
   decodeFunctionResult(
-    functionFragment: "implementation",
-    data: BytesLike
+      functionFragment: 'implementation',
+      data: BytesLike,
   ): Result;
-  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+
+  decodeFunctionResult(functionFragment: 'owner', data: BytesLike): Result;
+
   decodeFunctionResult(
-    functionFragment: "proposalsState",
-    data: BytesLike
+      functionFragment: 'proposalsState',
+      data: BytesLike,
   ): Result;
+
   decodeFunctionResult(
-    functionFragment: "proxiableUUID",
-    data: BytesLike
+      functionFragment: 'proxiableUUID',
+      data: BytesLike,
   ): Result;
+
   decodeFunctionResult(
-    functionFragment: "renounceOwnership",
-    data: BytesLike
+      functionFragment: 'renounceOwnership',
+      data: BytesLike,
   ): Result;
+
   decodeFunctionResult(
-    functionFragment: "transferOwnership",
-    data: BytesLike
+      functionFragment: 'transferOwnership',
+      data: BytesLike,
   ): Result;
-  decodeFunctionResult(functionFragment: "upgradeTo", data: BytesLike): Result;
+
+  decodeFunctionResult(functionFragment: 'upgradeTo', data: BytesLike): Result;
+
   decodeFunctionResult(
-    functionFragment: "upgradeToAndCall",
-    data: BytesLike
+      functionFragment: 'upgradeToAndCall',
+      data: BytesLike,
   ): Result;
 }
 
 export namespace AdminChangedEvent {
   export type InputTuple = [previousAdmin: AddressLike, newAdmin: AddressLike];
   export type OutputTuple = [previousAdmin: string, newAdmin: string];
+
   export interface OutputObject {
     previousAdmin: string;
     newAdmin: string;
   }
+
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
   export type Log = TypedEventLog<Event>;
@@ -273,9 +311,11 @@ export namespace AdminChangedEvent {
 export namespace BeaconUpgradedEvent {
   export type InputTuple = [beacon: AddressLike];
   export type OutputTuple = [beacon: string];
+
   export interface OutputObject {
     beacon: string;
   }
+
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
   export type Log = TypedEventLog<Event>;
@@ -285,9 +325,11 @@ export namespace BeaconUpgradedEvent {
 export namespace InitializedEvent {
   export type InputTuple = [version: BigNumberish];
   export type OutputTuple = [version: bigint];
+
   export interface OutputObject {
     version: bigint;
   }
+
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
   export type Log = TypedEventLog<Event>;
@@ -297,10 +339,12 @@ export namespace InitializedEvent {
 export namespace OwnershipTransferredEvent {
   export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
   export type OutputTuple = [previousOwner: string, newOwner: string];
+
   export interface OutputObject {
     previousOwner: string;
     newOwner: string;
   }
+
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
   export type Log = TypedEventLog<Event>;
@@ -310,9 +354,11 @@ export namespace OwnershipTransferredEvent {
 export namespace UpgradedEvent {
   export type InputTuple = [implementation: AddressLike];
   export type OutputTuple = [implementation: string];
+
   export interface OutputObject {
     implementation: string;
   }
+
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
   export type Log = TypedEventLog<Event>;
@@ -320,386 +366,394 @@ export namespace UpgradedEvent {
 }
 
 export interface IDCardVoting extends BaseContract {
+  interface: IDCardVotingInterface;
+  IDENTITY_LIMIT: TypedContractMethod<[], [bigint], 'view'>;
+  __IDCardVoting_init: TypedContractMethod<
+      [
+        registrationSMT_: AddressLike,
+        proposalsState_: AddressLike,
+        votingVerifier_: AddressLike
+      ],
+      [void],
+      'nonpayable'
+  >;
+  execute: TypedContractMethod<
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike,
+        zkPoints_: AQueryProofExecutor.ProofPointsStruct
+      ],
+      [void],
+      'nonpayable'
+  >;
+  executeNoir: TypedContractMethod<
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike,
+        zkPoints_: BytesLike
+      ],
+      [void],
+      'nonpayable'
+  >;
+  executeTD1: TypedContractMethod<
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike,
+        zkPoints_: AQueryProofExecutor.ProofPointsStruct
+      ],
+      [void],
+      'nonpayable'
+  >;
+  executeTD1Noir: TypedContractMethod<
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike,
+        zkPoints_: BytesLike
+      ],
+      [void],
+      'nonpayable'
+  >;
+  getProposalRules: TypedContractMethod<
+      [proposalId_: BigNumberish],
+      [BaseVoting.ProposalRulesStructOutput],
+      'view'
+  >;
+  getPublicSignals: TypedContractMethod<
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike
+      ],
+      [string[]],
+      'view'
+  >;
+  getPublicSignalsTD1: TypedContractMethod<
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike
+      ],
+      [string[]],
+      'view'
+  >;
+  getRegistrationSMT: TypedContractMethod<[], [string], 'view'>;
+  getVerifier: TypedContractMethod<[], [string], 'view'>;
+  implementation: TypedContractMethod<[], [string], 'view'>;
+  owner: TypedContractMethod<[], [string], 'view'>;
+  proposalsState: TypedContractMethod<[], [string], 'view'>;
+  proxiableUUID: TypedContractMethod<[], [string], 'view'>;
+  renounceOwnership: TypedContractMethod<[], [void], 'nonpayable'>;
+  transferOwnership: TypedContractMethod<
+      [newOwner: AddressLike],
+      [void],
+      'nonpayable'
+  >;
+  upgradeTo: TypedContractMethod<
+      [newImplementation: AddressLike],
+      [void],
+      'nonpayable'
+  >;
+  upgradeToAndCall: TypedContractMethod<
+      [newImplementation: AddressLike, data: BytesLike],
+      [void],
+      'payable'
+  >;
+  filters: {
+    'AdminChanged(address,address)': TypedContractEvent<
+        AdminChangedEvent.InputTuple,
+        AdminChangedEvent.OutputTuple,
+        AdminChangedEvent.OutputObject
+    >;
+    AdminChanged: TypedContractEvent<
+        AdminChangedEvent.InputTuple,
+        AdminChangedEvent.OutputTuple,
+        AdminChangedEvent.OutputObject
+    >;
+
+    'BeaconUpgraded(address)': TypedContractEvent<
+        BeaconUpgradedEvent.InputTuple,
+        BeaconUpgradedEvent.OutputTuple,
+        BeaconUpgradedEvent.OutputObject
+    >;
+    BeaconUpgraded: TypedContractEvent<
+        BeaconUpgradedEvent.InputTuple,
+        BeaconUpgradedEvent.OutputTuple,
+        BeaconUpgradedEvent.OutputObject
+    >;
+
+    'Initialized(uint8)': TypedContractEvent<
+        InitializedEvent.InputTuple,
+        InitializedEvent.OutputTuple,
+        InitializedEvent.OutputObject
+    >;
+    Initialized: TypedContractEvent<
+        InitializedEvent.InputTuple,
+        InitializedEvent.OutputTuple,
+        InitializedEvent.OutputObject
+    >;
+
+    'OwnershipTransferred(address,address)': TypedContractEvent<
+        OwnershipTransferredEvent.InputTuple,
+        OwnershipTransferredEvent.OutputTuple,
+        OwnershipTransferredEvent.OutputObject
+    >;
+    OwnershipTransferred: TypedContractEvent<
+        OwnershipTransferredEvent.InputTuple,
+        OwnershipTransferredEvent.OutputTuple,
+        OwnershipTransferredEvent.OutputObject
+    >;
+
+    'Upgraded(address)': TypedContractEvent<
+        UpgradedEvent.InputTuple,
+        UpgradedEvent.OutputTuple,
+        UpgradedEvent.OutputObject
+    >;
+    Upgraded: TypedContractEvent<
+        UpgradedEvent.InputTuple,
+        UpgradedEvent.OutputTuple,
+        UpgradedEvent.OutputObject
+    >;
+  };
+
   connect(runner?: ContractRunner | null): IDCardVoting;
+
   waitForDeployment(): Promise<this>;
 
-  interface: IDCardVotingInterface;
+  queryFilter<TCEvent extends TypedContractEvent>(
+      event: TCEvent,
+      fromBlockOrBlockhash?: string | number | undefined,
+      toBlock?: string | number | undefined,
+  ): Promise<Array<TypedEventLog<TCEvent>>>;
 
   queryFilter<TCEvent extends TypedContractEvent>(
-    event: TCEvent,
-    fromBlockOrBlockhash?: string | number | undefined,
-    toBlock?: string | number | undefined
-  ): Promise<Array<TypedEventLog<TCEvent>>>;
-  queryFilter<TCEvent extends TypedContractEvent>(
-    filter: TypedDeferredTopicFilter<TCEvent>,
-    fromBlockOrBlockhash?: string | number | undefined,
-    toBlock?: string | number | undefined
+      filter: TypedDeferredTopicFilter<TCEvent>,
+      fromBlockOrBlockhash?: string | number | undefined,
+      toBlock?: string | number | undefined,
   ): Promise<Array<TypedEventLog<TCEvent>>>;
 
   on<TCEvent extends TypedContractEvent>(
-    event: TCEvent,
-    listener: TypedListener<TCEvent>
+      event: TCEvent,
+      listener: TypedListener<TCEvent>,
   ): Promise<this>;
+
   on<TCEvent extends TypedContractEvent>(
-    filter: TypedDeferredTopicFilter<TCEvent>,
-    listener: TypedListener<TCEvent>
+      filter: TypedDeferredTopicFilter<TCEvent>,
+      listener: TypedListener<TCEvent>,
   ): Promise<this>;
 
   once<TCEvent extends TypedContractEvent>(
-    event: TCEvent,
-    listener: TypedListener<TCEvent>
+      event: TCEvent,
+      listener: TypedListener<TCEvent>,
   ): Promise<this>;
+
   once<TCEvent extends TypedContractEvent>(
-    filter: TypedDeferredTopicFilter<TCEvent>,
-    listener: TypedListener<TCEvent>
+      filter: TypedDeferredTopicFilter<TCEvent>,
+      listener: TypedListener<TCEvent>,
   ): Promise<this>;
 
   listeners<TCEvent extends TypedContractEvent>(
-    event: TCEvent
+      event: TCEvent,
   ): Promise<Array<TypedListener<TCEvent>>>;
+
   listeners(eventName?: string): Promise<Array<Listener>>;
+
   removeAllListeners<TCEvent extends TypedContractEvent>(
-    event?: TCEvent
+      event?: TCEvent,
   ): Promise<this>;
 
-  IDENTITY_LIMIT: TypedContractMethod<[], [bigint], "view">;
-
-  __IDCardVoting_init: TypedContractMethod<
-    [
-      registrationSMT_: AddressLike,
-      proposalsState_: AddressLike,
-      votingVerifier_: AddressLike
-    ],
-    [void],
-    "nonpayable"
-  >;
-
-  execute: TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike,
-      zkPoints_: AQueryProofExecutor.ProofPointsStruct
-    ],
-    [void],
-    "nonpayable"
-  >;
-
-  executeNoir: TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike,
-      zkPoints_: BytesLike
-    ],
-    [void],
-    "nonpayable"
-  >;
-
-  executeTD1: TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike,
-      zkPoints_: AQueryProofExecutor.ProofPointsStruct
-    ],
-    [void],
-    "nonpayable"
-  >;
-
-  executeTD1Noir: TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike,
-      zkPoints_: BytesLike
-    ],
-    [void],
-    "nonpayable"
-  >;
-
-  getProposalRules: TypedContractMethod<
-    [proposalId_: BigNumberish],
-    [BaseVoting.ProposalRulesStructOutput],
-    "view"
-  >;
-
-  getPublicSignals: TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike
-    ],
-    [string[]],
-    "view"
-  >;
-
-  getPublicSignalsTD1: TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike
-    ],
-    [string[]],
-    "view"
-  >;
-
-  getRegistrationSMT: TypedContractMethod<[], [string], "view">;
-
-  getVerifier: TypedContractMethod<[], [string], "view">;
-
-  implementation: TypedContractMethod<[], [string], "view">;
-
-  owner: TypedContractMethod<[], [string], "view">;
-
-  proposalsState: TypedContractMethod<[], [string], "view">;
-
-  proxiableUUID: TypedContractMethod<[], [string], "view">;
-
-  renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
-
-  transferOwnership: TypedContractMethod<
-    [newOwner: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-
-  upgradeTo: TypedContractMethod<
-    [newImplementation: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-
-  upgradeToAndCall: TypedContractMethod<
-    [newImplementation: AddressLike, data: BytesLike],
-    [void],
-    "payable"
-  >;
-
   getFunction<T extends ContractMethod = ContractMethod>(
-    key: string | FunctionFragment
+      key: string | FunctionFragment,
   ): T;
 
   getFunction(
-    nameOrSignature: "IDENTITY_LIMIT"
-  ): TypedContractMethod<[], [bigint], "view">;
+      nameOrSignature: 'IDENTITY_LIMIT',
+  ): TypedContractMethod<[], [bigint], 'view'>;
+
   getFunction(
-    nameOrSignature: "__IDCardVoting_init"
+      nameOrSignature: '__IDCardVoting_init',
   ): TypedContractMethod<
-    [
-      registrationSMT_: AddressLike,
-      proposalsState_: AddressLike,
-      votingVerifier_: AddressLike
-    ],
-    [void],
-    "nonpayable"
+      [
+        registrationSMT_: AddressLike,
+        proposalsState_: AddressLike,
+        votingVerifier_: AddressLike
+      ],
+      [void],
+      'nonpayable'
   >;
+
   getFunction(
-    nameOrSignature: "execute"
+      nameOrSignature: 'execute',
   ): TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike,
-      zkPoints_: AQueryProofExecutor.ProofPointsStruct
-    ],
-    [void],
-    "nonpayable"
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike,
+        zkPoints_: AQueryProofExecutor.ProofPointsStruct
+      ],
+      [void],
+      'nonpayable'
   >;
+
   getFunction(
-    nameOrSignature: "executeNoir"
+      nameOrSignature: 'executeNoir',
   ): TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike,
-      zkPoints_: BytesLike
-    ],
-    [void],
-    "nonpayable"
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike,
+        zkPoints_: BytesLike
+      ],
+      [void],
+      'nonpayable'
   >;
+
   getFunction(
-    nameOrSignature: "executeTD1"
+      nameOrSignature: 'executeTD1',
   ): TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike,
-      zkPoints_: AQueryProofExecutor.ProofPointsStruct
-    ],
-    [void],
-    "nonpayable"
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike,
+        zkPoints_: AQueryProofExecutor.ProofPointsStruct
+      ],
+      [void],
+      'nonpayable'
   >;
+
   getFunction(
-    nameOrSignature: "executeTD1Noir"
+      nameOrSignature: 'executeTD1Noir',
   ): TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike,
-      zkPoints_: BytesLike
-    ],
-    [void],
-    "nonpayable"
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike,
+        zkPoints_: BytesLike
+      ],
+      [void],
+      'nonpayable'
   >;
+
   getFunction(
-    nameOrSignature: "getProposalRules"
+      nameOrSignature: 'getProposalRules',
   ): TypedContractMethod<
-    [proposalId_: BigNumberish],
-    [BaseVoting.ProposalRulesStructOutput],
-    "view"
+      [proposalId_: BigNumberish],
+      [BaseVoting.ProposalRulesStructOutput],
+      'view'
   >;
+
   getFunction(
-    nameOrSignature: "getPublicSignals"
+      nameOrSignature: 'getPublicSignals',
   ): TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike
-    ],
-    [string[]],
-    "view"
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike
+      ],
+      [string[]],
+      'view'
   >;
+
   getFunction(
-    nameOrSignature: "getPublicSignalsTD1"
+      nameOrSignature: 'getPublicSignalsTD1',
   ): TypedContractMethod<
-    [
-      registrationRoot_: BytesLike,
-      currentDate_: BigNumberish,
-      userPayload_: BytesLike
-    ],
-    [string[]],
-    "view"
+      [
+        registrationRoot_: BytesLike,
+        currentDate_: BigNumberish,
+        userPayload_: BytesLike
+      ],
+      [string[]],
+      'view'
   >;
+
   getFunction(
-    nameOrSignature: "getRegistrationSMT"
-  ): TypedContractMethod<[], [string], "view">;
+      nameOrSignature: 'getRegistrationSMT',
+  ): TypedContractMethod<[], [string], 'view'>;
+
   getFunction(
-    nameOrSignature: "getVerifier"
-  ): TypedContractMethod<[], [string], "view">;
+      nameOrSignature: 'getVerifier',
+  ): TypedContractMethod<[], [string], 'view'>;
+
   getFunction(
-    nameOrSignature: "implementation"
-  ): TypedContractMethod<[], [string], "view">;
+      nameOrSignature: 'implementation',
+  ): TypedContractMethod<[], [string], 'view'>;
+
   getFunction(
-    nameOrSignature: "owner"
-  ): TypedContractMethod<[], [string], "view">;
+      nameOrSignature: 'owner',
+  ): TypedContractMethod<[], [string], 'view'>;
+
   getFunction(
-    nameOrSignature: "proposalsState"
-  ): TypedContractMethod<[], [string], "view">;
+      nameOrSignature: 'proposalsState',
+  ): TypedContractMethod<[], [string], 'view'>;
+
   getFunction(
-    nameOrSignature: "proxiableUUID"
-  ): TypedContractMethod<[], [string], "view">;
+      nameOrSignature: 'proxiableUUID',
+  ): TypedContractMethod<[], [string], 'view'>;
+
   getFunction(
-    nameOrSignature: "renounceOwnership"
-  ): TypedContractMethod<[], [void], "nonpayable">;
+      nameOrSignature: 'renounceOwnership',
+  ): TypedContractMethod<[], [void], 'nonpayable'>;
+
   getFunction(
-    nameOrSignature: "transferOwnership"
-  ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
+      nameOrSignature: 'transferOwnership',
+  ): TypedContractMethod<[newOwner: AddressLike], [void], 'nonpayable'>;
+
   getFunction(
-    nameOrSignature: "upgradeTo"
+      nameOrSignature: 'upgradeTo',
   ): TypedContractMethod<
-    [newImplementation: AddressLike],
-    [void],
-    "nonpayable"
+      [newImplementation: AddressLike],
+      [void],
+      'nonpayable'
   >;
+
   getFunction(
-    nameOrSignature: "upgradeToAndCall"
+      nameOrSignature: 'upgradeToAndCall',
   ): TypedContractMethod<
-    [newImplementation: AddressLike, data: BytesLike],
-    [void],
-    "payable"
+      [newImplementation: AddressLike, data: BytesLike],
+      [void],
+      'payable'
   >;
 
   getEvent(
-    key: "AdminChanged"
+      key: 'AdminChanged',
   ): TypedContractEvent<
-    AdminChangedEvent.InputTuple,
-    AdminChangedEvent.OutputTuple,
-    AdminChangedEvent.OutputObject
-  >;
-  getEvent(
-    key: "BeaconUpgraded"
-  ): TypedContractEvent<
-    BeaconUpgradedEvent.InputTuple,
-    BeaconUpgradedEvent.OutputTuple,
-    BeaconUpgradedEvent.OutputObject
-  >;
-  getEvent(
-    key: "Initialized"
-  ): TypedContractEvent<
-    InitializedEvent.InputTuple,
-    InitializedEvent.OutputTuple,
-    InitializedEvent.OutputObject
-  >;
-  getEvent(
-    key: "OwnershipTransferred"
-  ): TypedContractEvent<
-    OwnershipTransferredEvent.InputTuple,
-    OwnershipTransferredEvent.OutputTuple,
-    OwnershipTransferredEvent.OutputObject
-  >;
-  getEvent(
-    key: "Upgraded"
-  ): TypedContractEvent<
-    UpgradedEvent.InputTuple,
-    UpgradedEvent.OutputTuple,
-    UpgradedEvent.OutputObject
-  >;
-
-  filters: {
-    "AdminChanged(address,address)": TypedContractEvent<
       AdminChangedEvent.InputTuple,
       AdminChangedEvent.OutputTuple,
       AdminChangedEvent.OutputObject
-    >;
-    AdminChanged: TypedContractEvent<
-      AdminChangedEvent.InputTuple,
-      AdminChangedEvent.OutputTuple,
-      AdminChangedEvent.OutputObject
-    >;
+  >;
 
-    "BeaconUpgraded(address)": TypedContractEvent<
+  getEvent(
+      key: 'BeaconUpgraded',
+  ): TypedContractEvent<
       BeaconUpgradedEvent.InputTuple,
       BeaconUpgradedEvent.OutputTuple,
       BeaconUpgradedEvent.OutputObject
-    >;
-    BeaconUpgraded: TypedContractEvent<
-      BeaconUpgradedEvent.InputTuple,
-      BeaconUpgradedEvent.OutputTuple,
-      BeaconUpgradedEvent.OutputObject
-    >;
+  >;
 
-    "Initialized(uint8)": TypedContractEvent<
+  getEvent(
+      key: 'Initialized',
+  ): TypedContractEvent<
       InitializedEvent.InputTuple,
       InitializedEvent.OutputTuple,
       InitializedEvent.OutputObject
-    >;
-    Initialized: TypedContractEvent<
-      InitializedEvent.InputTuple,
-      InitializedEvent.OutputTuple,
-      InitializedEvent.OutputObject
-    >;
+  >;
 
-    "OwnershipTransferred(address,address)": TypedContractEvent<
+  getEvent(
+      key: 'OwnershipTransferred',
+  ): TypedContractEvent<
       OwnershipTransferredEvent.InputTuple,
       OwnershipTransferredEvent.OutputTuple,
       OwnershipTransferredEvent.OutputObject
-    >;
-    OwnershipTransferred: TypedContractEvent<
-      OwnershipTransferredEvent.InputTuple,
-      OwnershipTransferredEvent.OutputTuple,
-      OwnershipTransferredEvent.OutputObject
-    >;
+  >;
 
-    "Upgraded(address)": TypedContractEvent<
+  getEvent(
+      key: 'Upgraded',
+  ): TypedContractEvent<
       UpgradedEvent.InputTuple,
       UpgradedEvent.OutputTuple,
       UpgradedEvent.OutputObject
-    >;
-    Upgraded: TypedContractEvent<
-      UpgradedEvent.InputTuple,
-      UpgradedEvent.OutputTuple,
-      UpgradedEvent.OutputObject
-    >;
-  };
+  >;
 }
