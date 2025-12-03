@@ -119,7 +119,7 @@ export class Rarime {
         let inputs = {
             dg1: NoirCircuitParams.formatArray(
                 Array.from(passport.dataGroup1).map(byteValue => byteValue.toString()), false),
-            sk_identity: this.config.userConfiguration.userPrivateKey,
+            sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
         };
 
         if (Platform.OS === "android") {
