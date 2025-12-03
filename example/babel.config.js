@@ -1,12 +1,13 @@
 module.exports = (api) => {
-  api.cache(true)
+    api.cache(true);
   return {
     presets: [
-      ['babel-preset-expo', {
+        [
+            'babel-preset-expo', {
         jsxRuntime: 'automatic',
-       
+
       }],
-      
+
     ],
     plugins: [
       [
@@ -25,8 +26,6 @@ module.exports = (api) => {
         {
           root: ['./'],
           alias: {
-            // 'crypto': 'crypto-browserify',
-            // 'stream': 'readable-stream',
               '@rarimo/rarime-rn-sdk': '../src/index',
             '@iden3/js-crypto': '@iden3/js-crypto/dist/browser/esm/index.js',
           },
@@ -43,7 +42,7 @@ module.exports = (api) => {
           ],
         },
       ],
-      
+
     ],
-  }
-}
+  };
+};
