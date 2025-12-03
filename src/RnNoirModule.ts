@@ -93,7 +93,6 @@ export class NoirCircuitParams {
       const bigIntValue = BigInt(item);
 
       if (useHex) {
-        // Використовуємо вбудовану допоміжну функцію
         return ensureHexPrefix(bigIntValue.toString(16));
       } else {
         return bigIntValue.toString(10);
