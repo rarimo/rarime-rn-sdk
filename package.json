@@ -20,7 +20,8 @@
     "react-native",
     "expo",
     "@rarimo/rarime-rn-sdk",
-    "RarimoSDK"
+    "RarimoSDK",
+    "RarimeSDK"
   ],
   "repository": "https://github.com/rarimo/rarime-rn-sdk",
   "bugs": {
