@@ -30,7 +30,25 @@ This library includes native code. You generally need to use a Development Build
 npm install @rarimo/rarime-rn-sdk
 ```
 
-### 2. Configuration
+### 2. Install Polyfills
+
+React Native does not include certain Node.js core modules by default. To ensure compatibility with the Rarime SDK, you need to install polyfills for these modules.
+
+#### Install the required polyfill packages 
+```bash
+npm install crypto-browserify readable-stream buffer
+```
+
+#### Add polifils to your metro.config.js 
+```javascript
+config.resolver.extraNodeModules = {
+  crypto: require.resolve('crypto-browserify'),
+  stream: require.resolve('readable-stream'),
+  buffer: require.resolve('buffer/'),
+};
+```
+
+### 3. Configuration
 
 #### For Managed Expo Projects
 
