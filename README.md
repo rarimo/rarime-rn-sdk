@@ -39,7 +39,7 @@ React Native does not include certain Node.js core modules by default. To ensure
 #### Install the required polyfill packages
 
 ```bash
-npm install crypto-browserify readable-stream buffer
+npm install crypto-browserify readable-stream buffer react-native-get-random-values react-native-url-polyfill
 ```
 
 #### Import polyfills
@@ -51,7 +51,7 @@ import "react-native-get-random-values";
 import "react-native-url-polyfill/auto";
 import { Buffer } from "buffer";
 
-// @ts-ignore
+
 global.Buffer = Buffer;
 ```
 
