@@ -6,7 +6,7 @@ on **iOS and Android**.
 
 Powered by the **Expo Modules**.
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/rarimo/rarime-rn-sdk))
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/rarimo/rarime-rn-sdk)
 
 ---
 
@@ -53,6 +53,20 @@ config.resolver.extraNodeModules = {
 ### 3. Configuration
 
 #### For Managed Expo Projects
+
+You need to add our SDK to the `expo.plugins` array in your `app.json` or `app.config.js` file:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      "@rarimo/rarime-rn-sdk"
+    ]
+  }
+}
+```
+
+> **Note**: This step is necessary because the Gradle Sample plugin relies on additional build-time configuration to properly resolve and integrate native Android dependencies.
 
 No extra steps are usually required if you are using the latest Expo SDK. Simply rebuild your development client:
 
@@ -102,7 +116,7 @@ onPress = {async() => {
                 rarimeApiUrl: '<API_URL>',
             },
             userConfiguration: {
-                userPrivateKey: RarimeUtils.generateBJJPrivateKey(),
+                userPrivateKey: userPrivateKey,
             },
         };
 
