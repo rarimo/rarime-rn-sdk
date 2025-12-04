@@ -55,7 +55,7 @@ import { Buffer } from "buffer";
 global.Buffer = Buffer;
 ```
 
-Import thid file at the entry point of your application (e.g., in `App.tsx` or `index.ts`):
+Import this file at the entry point of your application (e.g. `App.tsx` or `index.ts`):
 
 ```typescript
 import "./polyfills";
