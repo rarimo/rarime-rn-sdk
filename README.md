@@ -36,17 +36,38 @@ npm install @rarimo/rarime-rn-sdk
 
 React Native does not include certain Node.js core modules by default. To ensure compatibility with the Rarime SDK, you need to install polyfills for these modules.
 
-#### Install the required polyfill packages 
+#### Install the required polyfill packages
+
 ```bash
 npm install crypto-browserify readable-stream buffer
 ```
 
-#### Add polifils to your metro.config.js 
+#### Import polyfills
+
+Create file polifills.ts and add the following code:
+
+```typescript
+import "react-native-get-random-values";
+import "react-native-url-polyfill/auto";
+import { Buffer } from "buffer";
+
+// @ts-ignore
+global.Buffer = Buffer;
+```
+
+Import thid file at the entry point of your application (e.g., in `App.tsx` or `index.ts`):
+
+```typescript
+import "./polyfills";
+```
+
+#### Add polyfills to your metro.config.js
+
 ```javascript
 config.resolver.extraNodeModules = {
-  crypto: require.resolve('crypto-browserify'),
-  stream: require.resolve('readable-stream'),
-  buffer: require.resolve('buffer/'),
+  crypto: require.resolve("crypto-browserify"),
+  stream: require.resolve("readable-stream"),
+  buffer: require.resolve("buffer"),
 };
 ```
 
@@ -59,14 +80,12 @@ You need to add our SDK to the `expo.plugins` array in your `app.json` or `app.c
 ```json
 {
   "expo": {
-    "plugins": [
-      "@rarimo/rarime-rn-sdk"
-    ]
+    "plugins": ["@rarimo/rarime-rn-sdk"]
   }
 }
 ```
 
-> **Note**: This step is necessary because the Gradle Sample plugin relies on additional build-time configuration to properly resolve and integrate native Android dependencies.
+> **Note**: This step is necessary because the Gradle relies on additional build-time configuration to properly resolve and integrate native Android dependencies.
 
 No extra steps are usually required if you are using the latest Expo SDK. Simply rebuild your development client:
 
@@ -116,7 +135,7 @@ onPress = {async() => {
                 rarimeApiUrl: '<API_URL>',
             },
             userConfiguration: {
-                userPrivateKey: userPrivateKey,
+                userPrivateKey,
             },
         };
 
