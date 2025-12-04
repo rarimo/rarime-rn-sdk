@@ -6,6 +6,8 @@ on **iOS and Android**.
 
 Powered by the **Expo Modules**.
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/rarimo/rarime-rn-sdk))
+
 ---
 
 ## ✨ Features
