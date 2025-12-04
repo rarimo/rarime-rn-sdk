@@ -6,6 +6,8 @@ on **iOS and Android**.
 
 Powered by the **Expo Modules**.
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/rarimo/rarime-rn-sdk)
+
 ---
 
 ## ✨ Features
@@ -22,15 +24,68 @@ Powered by the **Expo Modules**.
 
 This library includes native code. You generally need to use a Development Build if you are using Expo.
 
+> **Note:** Native code is not used by Expo Web or by iOS/Android simulators that run JS-only. Native modules only apply on real Android and iOS devices. If you plan to test on web or JS-only simulators, native libs will be ignored.
+
 ### 1. Install the package
 
 ```bash
 npm install @rarimo/rarime-rn-sdk
 ```
 
-### 2. Configuration
+### 2. Install Polyfills
+
+React Native does not include certain Node.js core modules by default. To ensure compatibility with the Rarime SDK, you need to install polyfills for these modules.
+
+#### Install the required polyfill packages
+
+```bash
+npm install crypto-browserify readable-stream buffer react-native-get-random-values react-native-url-polyfill
+```
+
+#### Import polyfills
+
+Create file polifills.ts and add the following code:
+
+```typescript
+import "react-native-get-random-values";
+import "react-native-url-polyfill/auto";
+import { Buffer } from "buffer";
+
+
+global.Buffer = Buffer;
+```
+
+Import this file at the entry point of your application (e.g. `App.tsx` or `index.ts`):
+
+```typescript
+import "./polyfills";
+```
+
+#### Add polyfills to your metro.config.js
+
+```javascript
+config.resolver.extraNodeModules = {
+  crypto: require.resolve("crypto-browserify"),
+  stream: require.resolve("readable-stream"),
+  buffer: require.resolve("buffer"),
+};
+```
+
+### 3. Configuration
 
 #### For Managed Expo Projects
+
+You need to add our SDK to the `expo.plugins` array in your `app.json` or `app.config.js` file:
+
+```json
+{
+  "expo": {
+    "plugins": ["@rarimo/rarime-rn-sdk"]
+  }
+}
+```
+
+> **Note**: This step is necessary because the Gradle relies on additional build-time configuration to properly resolve and integrate native Android dependencies.
 
 No extra steps are usually required if you are using the latest Expo SDK. Simply rebuild your development client:
 
@@ -80,7 +135,7 @@ onPress = {async() => {
                 rarimeApiUrl: '<API_URL>',
             },
             userConfiguration: {
-                userPrivateKey: RarimeUtils.generateBJJPrivateKey(),
+                userPrivateKey,
             },
         };
 
