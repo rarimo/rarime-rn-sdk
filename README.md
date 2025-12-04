@@ -22,6 +22,8 @@ Powered by the **Expo Modules**.
 
 This library includes native code. You generally need to use a Development Build if you are using Expo.
 
+> **Note:** Native code is not used by Expo Web or by iOS/Android simulators that run JS-only. Native modules only apply on real Android and iOS devices. If you plan to test on web or JS-only simulators, native libs will be ignored.
+
 ### 1. Install the package
 
 ```bash
