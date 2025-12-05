@@ -108,10 +108,11 @@ export class Rarime {
 
   public async registerIdentity(passport: RarimePassport): Promise<String> {
     const passportStatus = await this.getDocumentStatus(passport);
-
+    //TODO:Uncoment this before release
     // if (passportStatus === DocumentStatus.RegisteredWithOtherPk) {
     //   throw new Error("This document was registered with other Private Key");
     // }
+    console.log("passportStatus", passportStatus);
 
     // if (passportStatus === DocumentStatus.RegisteredWithThisPk) {
     //   throw new Error("This document was registered with this Private Key");
@@ -282,7 +283,7 @@ export class Rarime {
 
     const smtProof = await this.getSMTProof(passport);
     console.log("smtProof", smtProof);
-    
+
     let inputs = {
       event_id: queryProofParams.eventId, //from input
       event_data: queryProofParams.eventData,
@@ -299,7 +300,8 @@ export class Rarime {
       expiration_date_upperbound: queryProofParams.expirationDateUpperbound, //from input
       citizenship_mask: queryProofParams.citizenshipMask, //from input
       sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
-      pk_passport_hash: passport.getPassportKey(),
+      pk_passport_hash:
+        "0x" + passport.getPassportKey().toString(16).padStart(64, "0"),
       dg1: NoirCircuitParams.formatArray(
         Array.from(passport.dataGroup1).map((byteValue) =>
           byteValue.toString()
@@ -307,8 +309,11 @@ export class Rarime {
         true
       ),
       siblings: smtProof.siblings, //from SMT
-      timestamp: passportInfo[1].issueTimestamp,
-      identity_counter: passportInfo[0].identityReissueCounter,
+      timestamp:
+        "0x" + passportInfo[1].issueTimestamp.toString(16).padStart(64, "0"),
+      identity_counter:
+        "0x" +
+        passportInfo[0].identityReissueCounter.toString(16).padStart(64, "0"),
     };
 
     if (Platform.OS === "android") {
@@ -328,7 +333,8 @@ export class Rarime {
         expiration_date_upperbound: queryProofParams.expirationDateUpperbound, //from input
         citizenship_mask: queryProofParams.citizenshipMask, //from input
         sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
-        pk_passport_hash: passport.getPassportKey(),
+        pk_passport_hash:
+          "0x" + passport.getPassportKey().toString(16).padStart(64, "0"),
         dg1: NoirCircuitParams.formatArray(
           Array.from(passport.dataGroup1).map((byteValue) =>
             byteValue.toString()
@@ -336,10 +342,15 @@ export class Rarime {
           true
         ),
         siblings: smtProof.siblings, //from SMT
-        timestamp: passportInfo[1].issueTimestamp,
-        identity_counter: passportInfo[0].identityReissueCounter,
+        timestamp:
+          "0x" + passportInfo[1].issueTimestamp.toString(16).padStart(64, "0"),
+        identity_counter:
+          "0x" +
+          passportInfo[0].identityReissueCounter.toString(16).padStart(64, "0"),
       };
     }
+
+    console.log("Inputs ",inputs)
 
     const proof = await circuit.prove(JSON.stringify(inputs), byteCode);
 
