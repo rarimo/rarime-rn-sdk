@@ -1,6 +1,11 @@
-import { JsonRpcProvider } from "ethers";
+import { hexlify, JsonRpcProvider, toUtf8Bytes } from "ethers";
 import { DocumentStatus, RarimePassport } from "./RarimePassport";
-import { RegistrationSimple, StateKeeper__factory } from "./types/contracts";
+import {
+  PoseidonSMT__factory,
+  RegistrationSimple,
+  StateKeeper,
+  StateKeeper__factory,
+} from "./types/contracts";
 import { NoirCircuitParams, NoirZKProof } from "./RnNoirModule";
 import { Platform } from "react-native";
 import { HashAlgorithm } from "./helpers/HashAlgorithm";
@@ -8,6 +13,10 @@ import { createRegistrationSimpleContract } from "./helpers/contracts";
 import { RarimeUtils } from "./RarimeUtils";
 import { SignatureAlgorithm } from "./helpers/SignatureAlgorithm";
 import { wrapPem } from "./utils";
+import { QueryProofParams } from "./types";
+import { SparseMerkleTree } from "./types/contracts/PoseidonSMT";
+import { Poseidon } from "@iden3/js-crypto";
+import { Time } from "@distributedlab/tools";
 
 const ZERO_BYTES = new Uint8Array(64);
 
@@ -48,9 +57,11 @@ export class Rarime {
     this.config = config;
   }
 
-  public async getDocumentStatus(
+  private async getPassportInfo(
     passport: RarimePassport
-  ): Promise<DocumentStatus> {
+  ): Promise<
+    [StateKeeper.PassportInfoStructOutput, StateKeeper.IdentityInfoStructOutput]
+  > {
     const provider = new JsonRpcProvider(
       this.config.apiConfiguration.jsonRpcEvmUrl
     );
@@ -68,9 +79,16 @@ export class Rarime {
       passportKeyHex = "0x" + passportKeyHex;
     }
 
-    const PassportInfo = await contract.getPassportInfo(passportKeyHex);
+    const passportInfo = await contract.getPassportInfo(passportKeyHex);
+    return passportInfo;
+  }
 
-    const activeIdentity = PassportInfo?.[0].activeIdentity;
+  public async getDocumentStatus(
+    passport: RarimePassport
+  ): Promise<DocumentStatus> {
+    const passportInfo = await this.getPassportInfo(passport);
+
+    const activeIdentity = passportInfo?.[0].activeIdentity;
 
     const ZERO_BYTES_STRING =
       "0x" +
@@ -91,13 +109,13 @@ export class Rarime {
   public async registerIdentity(passport: RarimePassport): Promise<String> {
     const passportStatus = await this.getDocumentStatus(passport);
 
-    if (passportStatus === DocumentStatus.RegisteredWithOtherPk) {
-      throw new Error("This document was registered with other Private Key");
-    }
+    // if (passportStatus === DocumentStatus.RegisteredWithOtherPk) {
+    //   throw new Error("This document was registered with other Private Key");
+    // }
 
-    if (passportStatus === DocumentStatus.RegisteredWithThisPk) {
-      throw new Error("This document was registered with this Private Key");
-    }
+    // if (passportStatus === DocumentStatus.RegisteredWithThisPk) {
+    //   throw new Error("This document was registered with this Private Key");
+    // }
 
     const hashAlgoOID = passport.extractDGHashAlgo();
 
@@ -122,8 +140,8 @@ export class Rarime {
     );
 
     const liteRegisterResponseParsed = await liteRegisterResponse.json();
-
-    return liteRegisterResponseParsed.data.tx_hash;
+    console.log("liteRegisterResponseParsed", liteRegisterResponseParsed);
+    return liteRegisterResponseParsed.data.id;
   }
 
   private buildLiteRegisterCalldata(
@@ -191,6 +209,135 @@ export class Rarime {
           true
         ),
         sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
+      };
+    }
+
+    const proof = await circuit.prove(JSON.stringify(inputs), byteCode);
+
+    if (!proof) {
+      throw new Error(`Proof generation failed for registration proof`);
+    }
+
+    return proof;
+  }
+
+  private getSMTProofIndex(passport: RarimePassport): string {
+    const passportKey = passport.getPassportKey();
+    console.log("passportKey", passportKey);
+    const profileKey = RarimeUtils.getProfileKey(
+      this.config.userConfiguration.userPrivateKey
+    );
+    console.log("profileKey", profileKey);
+
+    const poseidonHash = Poseidon.hash([
+      passportKey,
+      BigInt("0x" + profileKey),
+    ]);
+
+    console.log("poseidonHash", poseidonHash);
+
+    return "0x" + poseidonHash.toString(16).padStart(64, "0");
+  }
+
+  private async getSMTProof(
+    passport: RarimePassport
+  ): Promise<SparseMerkleTree.ProofStruct> {
+    const provider = new JsonRpcProvider(
+      this.config.apiConfiguration.jsonRpcEvmUrl
+    );
+
+    const contract = PoseidonSMT__factory.connect(
+      this.config.contractsConfiguration.poseidonSmtAddress,
+      provider
+    );
+    console.log("contract");
+    const smtProofIndex = this.getSMTProofIndex(passport);
+    console.log("smtProofIndex", smtProofIndex);
+    const smtProof = await contract.getProof(smtProofIndex);
+
+    return smtProof;
+  }
+
+  public async generateQueryProof(
+    queryProofParams: QueryProofParams,
+    passport: RarimePassport
+  ): Promise<NoirZKProof> {
+    const circuit = NoirCircuitParams.fromName("query_identity");
+    console.log("circuit", circuit);
+    await NoirCircuitParams.downloadTrustedSetup();
+
+    const byteCode = await circuit.downloadByteCode();
+
+    const profileKey =
+      "0x" +
+      RarimeUtils.getProfileKey(this.config.userConfiguration.userPrivateKey);
+
+    const passportInfo = await this.getPassportInfo(passport);
+
+    if (profileKey != passportInfo[0].activeIdentity) {
+      throw new Error(
+        `profile key mismatch. profileKey = ${profileKey}, passportInfo.activeIdentity = ${passportInfo[0].activeIdentity}`
+      );
+    }
+
+    const smtProof = await this.getSMTProof(passport);
+    console.log("smtProof", smtProof);
+    
+    let inputs = {
+      event_id: queryProofParams.eventId, //from input
+      event_data: queryProofParams.eventData,
+      id_state_root: smtProof.root, //from SMT
+      selector: queryProofParams.selector, //from input
+      current_date: hexlify(toUtf8Bytes(new Time().format("YYMMDD"))),
+      timestamp_lowerbound: queryProofParams.timestampLowerbound, //from input
+      timestamp_upperbound: queryProofParams.timestampUpperbound, //from input
+      identity_count_lowerbound: queryProofParams.identityCountLowerbound, //from input
+      identity_count_upperbound: queryProofParams.identityCountUpperbound, //from input
+      birth_date_lowerbound: queryProofParams.birthDateLowerbound, //from input
+      birth_date_upperbound: queryProofParams.birthDateUpperbound, //from input
+      expiration_date_lowerbound: queryProofParams.expirationDateLowerbound, //from input
+      expiration_date_upperbound: queryProofParams.expirationDateUpperbound, //from input
+      citizenship_mask: queryProofParams.citizenshipMask, //from input
+      sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
+      pk_passport_hash: passport.getPassportKey(),
+      dg1: NoirCircuitParams.formatArray(
+        Array.from(passport.dataGroup1).map((byteValue) =>
+          byteValue.toString()
+        ),
+        true
+      ),
+      siblings: smtProof.siblings, //from SMT
+      timestamp: passportInfo[1].issueTimestamp,
+      identity_counter: passportInfo[0].identityReissueCounter,
+    };
+
+    if (Platform.OS === "android") {
+      inputs = {
+        event_id: queryProofParams.eventId, //from input
+        event_data: queryProofParams.eventData,
+        id_state_root: smtProof.root, //from SMT
+        selector: queryProofParams.selector, //from input
+        current_date: hexlify(toUtf8Bytes(new Time().format("YYMMDD"))),
+        timestamp_lowerbound: queryProofParams.timestampLowerbound, //from input
+        timestamp_upperbound: queryProofParams.timestampUpperbound, //from input
+        identity_count_lowerbound: queryProofParams.identityCountLowerbound, //from input
+        identity_count_upperbound: queryProofParams.identityCountUpperbound, //from input
+        birth_date_lowerbound: queryProofParams.birthDateLowerbound, //from input
+        birth_date_upperbound: queryProofParams.birthDateUpperbound, //from input
+        expiration_date_lowerbound: queryProofParams.expirationDateLowerbound, //from input
+        expiration_date_upperbound: queryProofParams.expirationDateUpperbound, //from input
+        citizenship_mask: queryProofParams.citizenshipMask, //from input
+        sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
+        pk_passport_hash: passport.getPassportKey(),
+        dg1: NoirCircuitParams.formatArray(
+          Array.from(passport.dataGroup1).map((byteValue) =>
+            byteValue.toString()
+          ),
+          true
+        ),
+        siblings: smtProof.siblings, //from SMT
+        timestamp: passportInfo[1].issueTimestamp,
+        identity_counter: passportInfo[0].identityReissueCounter,
       };
     }
 
