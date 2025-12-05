@@ -51,7 +51,6 @@ import "react-native-get-random-values";
 import "react-native-url-polyfill/auto";
 import { Buffer } from "buffer";
 
-
 global.Buffer = Buffer;
 ```
 
@@ -110,12 +109,12 @@ cd ios && pod install
 
 ## 🚀 Example Usage
 
-Below is an example of how to initialize the SDK and generate a proof.
+### Initialize the SDK
 
-```ts
+```typescript
 import * from '@rarimo/rarime-rn-sdk';
 
-onPress = {async() => {
+onPress = { async () => {
     try {
         /** Generate private key for user */
         const userPrivateKey: string = RarimeUtils.generateBJJPrivateKey();
@@ -152,6 +151,20 @@ onPress = {async() => {
             })
         ;
 
+    }
+    catch (e) {
+        console.error(e);
+        alert('Error: ' + (e as Error).message);
+        setBusy(false);
+    }
+}}
+```
+
+### Register identity with SDK
+
+```typescript
+onPress = { async () => {
+    try {
         /**
          * Checks the passport registration status.
          *
@@ -165,7 +178,7 @@ onPress = {async() => {
         /** Light registration
          * Returned hash of register transaction from blockchain
          *
-         *  Performs a zero-knowledge proof generation based on the provided query parameters.
+         *  Performs a zero-knowledge proof generation.
          *
          * ⚠️ This is a computationally intensive cryptographic operation.
          * Expected execution time: up to ~5 seconds depending on hardware.
@@ -175,12 +188,81 @@ onPress = {async() => {
             passport,
         );
 
-    } catch (e) {
+    }
+    catch (e) {
         console.error(e);
         alert('Error: ' + (e as Error).message);
         setBusy(false);
     }
-}
+}}
+```
+
+### Query Proof Generation Example
+
+```typescript
+onPress = { async () => {
+  try {
+    /**
+     * ---------------------------------------------
+     *  Query Proof Parameters
+     * ---------------------------------------------
+     * Replace placeholder values with real data.
+     *
+     * ⚠️ IMPORTANT:
+     * - All values must be valid BigInt-castable strings.
+     * - Supplying invalid values will cause proof generation to fail.
+     */
+    const queryProofParams: QueryProofParams = {
+      eventId: "43580365239758335475",
+      eventData:
+        "270038666511201875208172000617689023489105079510191335498520083214634616239",
+      selector: "0",
+
+      // Timestamp boundaries (Unix time, BigInt format)
+      timestampLowerbound: "0",
+      timestampUpperbound: "0",
+
+      // Identity count range
+      identityCountLowerbound: "0",
+      identityCountUpperbound: "0",
+
+      // Birthdate range (BigInt-encoded date)
+      birthDateLowerbound: "52983525027888",
+      birthDateUpperbound: "52983525027888",
+
+      // Expiration date range
+      expirationDateLowerbound: "52983525027888",
+      expirationDateUpperbound: "52983525027888",
+
+      // Citizenship bitmask filter (0 = disabled)
+      citizenshipMask: "0",
+    };
+
+    /**
+     * ---------------------------------------------
+     *  Generate Query Proof
+     * ---------------------------------------------
+     * Performs a zero-knowledge proof generation using the
+     * provided query parameters and the user passport.
+     *
+     * ⏱ Execution time:
+     *    ~1–5 seconds depending on device performance.
+     *
+     * 🧠 Resource usage:
+     *    This operation is cryptographically heavy and may
+     *    consume significant CPU and memory during execution.
+     */
+    const queryProof = await rarime.generateQueryProof(
+      queryProofParams,
+      passport
+    );
+
+  } catch (e) {
+    console.error(e);
+    alert("Error: " + (e as Error).message);
+    setBusy(false);
+  }
+}}
 ```
 
 ---
