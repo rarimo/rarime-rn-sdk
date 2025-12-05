@@ -9,9 +9,7 @@ import {
 
 export async function liteRegistration() {
   const userPrivateKey =
-    PRIVATE_KEY && PRIVATE_KEY.length > 0
-      ? PRIVATE_KEY
-      :"";
+    PRIVATE_KEY && PRIVATE_KEY.length > 0 ? PRIVATE_KEY : "";
 
   console.log(userPrivateKey);
 
@@ -93,18 +91,19 @@ export async function generateQuerryProof() {
   console.log("passport", passport);
 
   const queryProofParams: QueryProofParams = {
-      eventId: "43580365239758335475",
-      eventData: "270038666511201875208172000617689023489105079510191335498520083214634616239",
-      selector: "0",
-      timestampLowerbound: "0",
-      timestampUpperbound: "0",
-      identityCountLowerbound: "0",
-      identityCountUpperbound: "0",
-      birthDateLowerbound: "52983525027888",
-      birthDateUpperbound: "52983525027888",
-      expirationDateLowerbound: "52983525027888",
-      expirationDateUpperbound: "52983525027888",
-      citizenshipMask: "0"
+    eventId: "43580365239758335475",
+    eventData:
+      "270038666511201875208172000617689023489105079510191335498520083214634616239",
+    selector: "0",
+    timestampLowerbound: "0",
+    timestampUpperbound: "0",
+    identityCountLowerbound: "0",
+    identityCountUpperbound: "0",
+    birthDateLowerbound: "52983525027888",
+    birthDateUpperbound: "52983525027888",
+    expirationDateLowerbound: "52983525027888",
+    expirationDateUpperbound: "52983525027888",
+    citizenshipMask: "0",
   };
 
   const queryProof = await rarime.generateQueryProof(

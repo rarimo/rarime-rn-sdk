@@ -318,20 +318,20 @@ export class Rarime {
 
     if (Platform.OS === "android") {
       inputs = {
-        event_id: queryProofParams.eventId, //from input
-        event_data: queryProofParams.eventData,
+        event_id: "0x" + BigInt(queryProofParams.eventId).toString(16).padStart(64, "0"), //from input
+        event_data: "0x" + BigInt(queryProofParams.eventData).toString(16).padStart(64, "0"),//from input
         id_state_root: smtProof.root, //from SMT
-        selector: queryProofParams.selector, //from input
+        selector: "0x" + BigInt(queryProofParams.selector).toString(16).padStart(64, "0"), //from input
         current_date: hexlify(toUtf8Bytes(new Time().format("YYMMDD"))),
-        timestamp_lowerbound: queryProofParams.timestampLowerbound, //from input
-        timestamp_upperbound: queryProofParams.timestampUpperbound, //from input
-        identity_count_lowerbound: queryProofParams.identityCountLowerbound, //from input
-        identity_count_upperbound: queryProofParams.identityCountUpperbound, //from input
-        birth_date_lowerbound: queryProofParams.birthDateLowerbound, //from input
-        birth_date_upperbound: queryProofParams.birthDateUpperbound, //from input
-        expiration_date_lowerbound: queryProofParams.expirationDateLowerbound, //from input
-        expiration_date_upperbound: queryProofParams.expirationDateUpperbound, //from input
-        citizenship_mask: queryProofParams.citizenshipMask, //from input
+        timestamp_lowerbound:"0x" + BigInt(queryProofParams.timestampLowerbound).toString(16).padStart(64, "0"), //from input
+        timestamp_upperbound: "0x" + BigInt(queryProofParams.timestampUpperbound).toString(16).padStart(64, "0"), //from input
+        identity_count_lowerbound: "0x" + BigInt(queryProofParams.identityCountLowerbound).toString(16).padStart(64, "0"), //from input
+        identity_count_upperbound: "0x" + BigInt(queryProofParams.identityCountUpperbound).toString(16).padStart(64, "0"), //from input
+        birth_date_lowerbound: "0x" + BigInt(queryProofParams.birthDateLowerbound).toString(16).padStart(64, "0"), //from input
+        birth_date_upperbound: "0x" + BigInt(queryProofParams.birthDateUpperbound).toString(16).padStart(64, "0"), //from input
+        expiration_date_lowerbound: "0x" + BigInt(queryProofParams.expirationDateLowerbound).toString(16).padStart(64, "0"), //from input
+        expiration_date_upperbound: "0x" + BigInt(queryProofParams.expirationDateUpperbound).toString(16).padStart(64, "0"), //from input
+        citizenship_mask: "0x" + BigInt(queryProofParams.citizenshipMask).toString(16).padStart(64, "0"), //from input
         sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
         pk_passport_hash:
           "0x" + passport.getPassportKey().toString(16).padStart(64, "0"),
