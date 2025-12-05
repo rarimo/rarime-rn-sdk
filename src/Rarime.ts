@@ -184,22 +184,15 @@ export class Rarime {
     await NoirCircuitParams.downloadTrustedSetup();
 
     const byteCode = await circuit.downloadByteCode();
-    
+
     const isAndroid = Platform.OS === "android";
     let inputs = {
-      dg1: isAndroid
-        ? NoirCircuitParams.formatArray(
-            Array.from(passport.dataGroup1).map((byteValue) =>
-              byteValue.toString()
-            ),
-            true
-          )
-        : NoirCircuitParams.formatArray(
-            Array.from(passport.dataGroup1).map((byteValue) =>
-              byteValue.toString()
-            ),
-            false
-          ),
+      dg1: NoirCircuitParams.formatArray(
+        Array.from(passport.dataGroup1).map((byteValue) =>
+          byteValue.toString()
+        ),
+        isAndroid
+      ),
       sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
     };
 
@@ -304,19 +297,12 @@ export class Rarime {
         : queryProofParams.citizenshipMask, //from input
       sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
       pk_passport_hash: toPaddedHex32(passport.getPassportKey()),
-      dg1: isAndroid
-        ? NoirCircuitParams.formatArray(
-            Array.from(passport.dataGroup1).map((byteValue) =>
-              byteValue.toString()
-            ),
-            true
-          )
-        : NoirCircuitParams.formatArray(
-            Array.from(passport.dataGroup1).map((byteValue) =>
-              byteValue.toString()
-            ),
-            false
-          ),
+      dg1: NoirCircuitParams.formatArray(
+        Array.from(passport.dataGroup1).map((byteValue) =>
+          byteValue.toString()
+        ),
+        isAndroid
+      ),
       siblings: smtProof.siblings, //from SMT
       timestamp: toPaddedHex32(passportInfo[1].issueTimestamp),
       identity_counter: toPaddedHex32(passportInfo[0].identityReissueCounter),
