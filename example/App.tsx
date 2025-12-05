@@ -1,6 +1,6 @@
 import { Button, ScrollView, Text, View } from "react-native";
 import React from "react";
-import { generateQuerryProof, liteRegistration } from "./src";
+import { generateQueryProof, liteRegistration } from "./src";
 
 export default function App() {
   const [busy, setBusy] = React.useState(false);
@@ -32,7 +32,7 @@ export default function App() {
           onPress={async () => {
             setBusy(true);
             try {
-              const queryProof = await generateQuerryProof();
+              const queryProof = await generateQueryProof();
               console.log("queryProof", queryProof);
               setBusy(false);
             } catch (e) {

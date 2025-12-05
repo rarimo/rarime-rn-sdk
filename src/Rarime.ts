@@ -271,7 +271,7 @@ export class Rarime {
 
     const passportInfo = await this.getPassportInfo(passport);
 
-    if (profileKey != passportInfo[0].activeIdentity) {
+    if (profileKey !== passportInfo[0].activeIdentity) {
       throw new Error(
         `profile key mismatch. profileKey = ${profileKey}, passportInfo.activeIdentity = ${passportInfo[0].activeIdentity}`
       );
@@ -390,7 +390,7 @@ export class Rarime {
     const proof = await circuit.prove(JSON.stringify(inputs), byteCode);
 
     if (!proof) {
-      throw new Error(`Proof generation failed for registration proof`);
+      throw new Error(`Proof generation failed for query proof`);
     }
 
     return proof;

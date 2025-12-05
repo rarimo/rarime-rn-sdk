@@ -52,7 +52,7 @@ export async function liteRegistration() {
   return liteRegisterResult;
 }
 
-export async function generateQuerryProof() {
+export async function generateQueryProof() {
   const userPrivateKey =
     PRIVATE_KEY && PRIVATE_KEY.length > 0
       ? PRIVATE_KEY
