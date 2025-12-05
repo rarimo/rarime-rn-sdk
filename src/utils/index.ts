@@ -3,6 +3,7 @@ import {AsnConvert} from '@peculiar/asn1-schema';
 import {Buffer} from 'buffer';
 
 export * from './sod';
+export * from './hex';
 
 export function wrapPem(certificates: CertificateSet): string {
   const LINE_LENGTH = 64;
