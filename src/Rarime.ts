@@ -108,15 +108,14 @@ export class Rarime {
 
   public async registerIdentity(passport: RarimePassport): Promise<String> {
     const passportStatus = await this.getDocumentStatus(passport);
-    //TODO:Uncoment this before release
-    // if (passportStatus === DocumentStatus.RegisteredWithOtherPk) {
-    //   throw new Error("This document was registered with other Private Key");
-    // }
-    console.log("passportStatus", passportStatus);
 
-    // if (passportStatus === DocumentStatus.RegisteredWithThisPk) {
-    //   throw new Error("This document was registered with this Private Key");
-    // }
+    if (passportStatus === DocumentStatus.RegisteredWithOtherPk) {
+      throw new Error("This document was registered with other Private Key");
+    }
+
+    if (passportStatus === DocumentStatus.RegisteredWithThisPk) {
+      throw new Error("This document was registered with this Private Key");
+    }
 
     const hashAlgoOID = passport.extractDGHashAlgo();
 
@@ -141,7 +140,7 @@ export class Rarime {
     );
 
     const liteRegisterResponseParsed = await liteRegisterResponse.json();
-    console.log("liteRegisterResponseParsed", liteRegisterResponseParsed);
+
     return liteRegisterResponseParsed.data.id;
   }
 
@@ -224,18 +223,15 @@ export class Rarime {
 
   private getSMTProofIndex(passport: RarimePassport): string {
     const passportKey = passport.getPassportKey();
-    console.log("passportKey", passportKey);
+
     const profileKey = RarimeUtils.getProfileKey(
       this.config.userConfiguration.userPrivateKey
     );
-    console.log("profileKey", profileKey);
 
     const poseidonHash = Poseidon.hash([
       passportKey,
       BigInt("0x" + profileKey),
     ]);
-
-    console.log("poseidonHash", poseidonHash);
 
     return "0x" + poseidonHash.toString(16).padStart(64, "0");
   }
@@ -251,9 +247,9 @@ export class Rarime {
       this.config.contractsConfiguration.poseidonSmtAddress,
       provider
     );
-    console.log("contract");
+
     const smtProofIndex = this.getSMTProofIndex(passport);
-    console.log("smtProofIndex", smtProofIndex);
+
     const smtProof = await contract.getProof(smtProofIndex);
 
     return smtProof;
@@ -264,7 +260,7 @@ export class Rarime {
     passport: RarimePassport
   ): Promise<NoirZKProof> {
     const circuit = NoirCircuitParams.fromName("query_identity");
-    console.log("circuit", circuit);
+
     await NoirCircuitParams.downloadTrustedSetup();
 
     const byteCode = await circuit.downloadByteCode();
@@ -282,7 +278,6 @@ export class Rarime {
     }
 
     const smtProof = await this.getSMTProof(passport);
-    console.log("smtProof", smtProof);
 
     let inputs = {
       event_id: queryProofParams.eventId, //from input
@@ -318,20 +313,62 @@ export class Rarime {
 
     if (Platform.OS === "android") {
       inputs = {
-        event_id: "0x" + BigInt(queryProofParams.eventId).toString(16).padStart(64, "0"), //from input
-        event_data: "0x" + BigInt(queryProofParams.eventData).toString(16).padStart(64, "0"),//from input
+        event_id:
+          "0x" +
+          BigInt(queryProofParams.eventId).toString(16).padStart(64, "0"), //from input
+        event_data:
+          "0x" +
+          BigInt(queryProofParams.eventData).toString(16).padStart(64, "0"), //from input
         id_state_root: smtProof.root, //from SMT
-        selector: "0x" + BigInt(queryProofParams.selector).toString(16).padStart(64, "0"), //from input
+        selector:
+          "0x" +
+          BigInt(queryProofParams.selector).toString(16).padStart(64, "0"), //from input
         current_date: hexlify(toUtf8Bytes(new Time().format("YYMMDD"))),
-        timestamp_lowerbound:"0x" + BigInt(queryProofParams.timestampLowerbound).toString(16).padStart(64, "0"), //from input
-        timestamp_upperbound: "0x" + BigInt(queryProofParams.timestampUpperbound).toString(16).padStart(64, "0"), //from input
-        identity_count_lowerbound: "0x" + BigInt(queryProofParams.identityCountLowerbound).toString(16).padStart(64, "0"), //from input
-        identity_count_upperbound: "0x" + BigInt(queryProofParams.identityCountUpperbound).toString(16).padStart(64, "0"), //from input
-        birth_date_lowerbound: "0x" + BigInt(queryProofParams.birthDateLowerbound).toString(16).padStart(64, "0"), //from input
-        birth_date_upperbound: "0x" + BigInt(queryProofParams.birthDateUpperbound).toString(16).padStart(64, "0"), //from input
-        expiration_date_lowerbound: "0x" + BigInt(queryProofParams.expirationDateLowerbound).toString(16).padStart(64, "0"), //from input
-        expiration_date_upperbound: "0x" + BigInt(queryProofParams.expirationDateUpperbound).toString(16).padStart(64, "0"), //from input
-        citizenship_mask: "0x" + BigInt(queryProofParams.citizenshipMask).toString(16).padStart(64, "0"), //from input
+        timestamp_lowerbound:
+          "0x" +
+          BigInt(queryProofParams.timestampLowerbound)
+            .toString(16)
+            .padStart(64, "0"), //from input
+        timestamp_upperbound:
+          "0x" +
+          BigInt(queryProofParams.timestampUpperbound)
+            .toString(16)
+            .padStart(64, "0"), //from input
+        identity_count_lowerbound:
+          "0x" +
+          BigInt(queryProofParams.identityCountLowerbound)
+            .toString(16)
+            .padStart(64, "0"), //from input
+        identity_count_upperbound:
+          "0x" +
+          BigInt(queryProofParams.identityCountUpperbound)
+            .toString(16)
+            .padStart(64, "0"), //from input
+        birth_date_lowerbound:
+          "0x" +
+          BigInt(queryProofParams.birthDateLowerbound)
+            .toString(16)
+            .padStart(64, "0"), //from input
+        birth_date_upperbound:
+          "0x" +
+          BigInt(queryProofParams.birthDateUpperbound)
+            .toString(16)
+            .padStart(64, "0"), //from input
+        expiration_date_lowerbound:
+          "0x" +
+          BigInt(queryProofParams.expirationDateLowerbound)
+            .toString(16)
+            .padStart(64, "0"), //from input
+        expiration_date_upperbound:
+          "0x" +
+          BigInt(queryProofParams.expirationDateUpperbound)
+            .toString(16)
+            .padStart(64, "0"), //from input
+        citizenship_mask:
+          "0x" +
+          BigInt(queryProofParams.citizenshipMask)
+            .toString(16)
+            .padStart(64, "0"), //from input
         sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
         pk_passport_hash:
           "0x" + passport.getPassportKey().toString(16).padStart(64, "0"),
@@ -349,8 +386,6 @@ export class Rarime {
           passportInfo[0].identityReissueCounter.toString(16).padStart(64, "0"),
       };
     }
-
-    console.log("Inputs ",inputs)
 
     const proof = await circuit.prove(JSON.stringify(inputs), byteCode);
 
