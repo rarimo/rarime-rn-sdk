@@ -12,7 +12,7 @@ import { HashAlgorithm } from "./helpers/HashAlgorithm";
 import { createRegistrationSimpleContract } from "./helpers/contracts";
 import { RarimeUtils } from "./RarimeUtils";
 import { SignatureAlgorithm } from "./helpers/SignatureAlgorithm";
-import { wrapPem } from "./utils";
+import { toPaddedHex32, wrapPem } from "./utils";
 import { QueryProofParams } from "./types";
 import { SparseMerkleTree } from "./types/contracts/PoseidonSMT";
 import { Poseidon } from "@iden3/js-crypto";
@@ -73,11 +73,7 @@ export class Rarime {
 
     const passportKey = passport.getPassportKey();
 
-    let passportKeyHex = passportKey.toString(16).padStart(64, "0");
-
-    if (!passportKeyHex.startsWith("0x")) {
-      passportKeyHex = "0x" + passportKeyHex;
-    }
+    let passportKeyHex = toPaddedHex32(passportKey);
 
     const passportInfo = await contract.getPassportInfo(passportKeyHex);
     return passportInfo;
@@ -158,8 +154,7 @@ export class Rarime {
       dgCommit: BigInt("0x" + proof.pub_signals[0]),
       dg1Hash: Buffer.from(proof.pub_signals[1], "hex"),
       publicKey: verifySodResponseParsed.data.attributes.public_key,
-      passportHash:
-        "0x" + passport.getPassportHash().toString(16).padStart(64, "0"),
+      passportHash: toPaddedHex32(passport.getPassportHash()),
       verifier: verifySodResponseParsed.data.attributes.verifier,
     };
 
@@ -189,36 +184,26 @@ export class Rarime {
     await NoirCircuitParams.downloadTrustedSetup();
 
     const byteCode = await circuit.downloadByteCode();
-
+    
+    const isAndroid = Platform.OS === "android";
     let inputs = {
-      dg1: NoirCircuitParams.formatArray(
-        Array.from(passport.dataGroup1).map((byteValue) =>
-          byteValue.toString()
-        ),
-        false
-      ),
+      dg1: isAndroid
+        ? NoirCircuitParams.formatArray(
+            Array.from(passport.dataGroup1).map((byteValue) =>
+              byteValue.toString()
+            ),
+            true
+          )
+        : NoirCircuitParams.formatArray(
+            Array.from(passport.dataGroup1).map((byteValue) =>
+              byteValue.toString()
+            ),
+            false
+          ),
       sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
     };
 
-    if (Platform.OS === "android") {
-      inputs = {
-        dg1: NoirCircuitParams.formatArray(
-          Array.from(passport.dataGroup1).map((byteValue) =>
-            byteValue.toString()
-          ),
-          true
-        ),
-        sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
-      };
-    }
-
-    const proof = await circuit.prove(JSON.stringify(inputs), byteCode);
-
-    if (!proof) {
-      throw new Error(`Proof generation failed for registration proof`);
-    }
-
-    return proof;
+    return circuit.prove(JSON.stringify(inputs), byteCode);
   }
 
   private getSMTProofIndex(passport: RarimePassport): string {
@@ -233,7 +218,7 @@ export class Rarime {
       BigInt("0x" + profileKey),
     ]);
 
-    return "0x" + poseidonHash.toString(16).padStart(64, "0");
+    return toPaddedHex32(poseidonHash);
   }
 
   private async getSMTProof(
@@ -250,9 +235,7 @@ export class Rarime {
 
     const smtProofIndex = this.getSMTProofIndex(passport);
 
-    const smtProof = await contract.getProof(smtProofIndex);
-
-    return smtProof;
+    return contract.getProof(smtProofIndex);
   }
 
   public async generateQueryProof(
@@ -279,121 +262,67 @@ export class Rarime {
 
     const smtProof = await this.getSMTProof(passport);
 
-    let inputs = {
-      event_id: queryProofParams.eventId, //from input
-      event_data: queryProofParams.eventData,
+    const isAndroid = Platform.OS === "android";
+    const inputs = {
+      event_id: isAndroid
+        ? toPaddedHex32(queryProofParams.eventId)
+        : queryProofParams.eventId, //from input
+      event_data: isAndroid
+        ? toPaddedHex32(queryProofParams.eventData)
+        : queryProofParams.eventData,
       id_state_root: smtProof.root, //from SMT
-      selector: queryProofParams.selector, //from input
+      selector: isAndroid
+        ? toPaddedHex32(queryProofParams.selector)
+        : queryProofParams.selector, //from input
       current_date: hexlify(toUtf8Bytes(new Time().format("YYMMDD"))),
-      timestamp_lowerbound: queryProofParams.timestampLowerbound, //from input
-      timestamp_upperbound: queryProofParams.timestampUpperbound, //from input
-      identity_count_lowerbound: queryProofParams.identityCountLowerbound, //from input
-      identity_count_upperbound: queryProofParams.identityCountUpperbound, //from input
-      birth_date_lowerbound: queryProofParams.birthDateLowerbound, //from input
-      birth_date_upperbound: queryProofParams.birthDateUpperbound, //from input
-      expiration_date_lowerbound: queryProofParams.expirationDateLowerbound, //from input
-      expiration_date_upperbound: queryProofParams.expirationDateUpperbound, //from input
-      citizenship_mask: queryProofParams.citizenshipMask, //from input
+      timestamp_lowerbound: isAndroid
+        ? toPaddedHex32(queryProofParams.timestampLowerbound)
+        : queryProofParams.timestampLowerbound, //from input
+      timestamp_upperbound: isAndroid
+        ? toPaddedHex32(queryProofParams.timestampUpperbound)
+        : queryProofParams.timestampUpperbound, //from input
+      identity_count_lowerbound: isAndroid
+        ? toPaddedHex32(queryProofParams.identityCountLowerbound)
+        : queryProofParams.identityCountLowerbound, //from input
+      identity_count_upperbound: isAndroid
+        ? toPaddedHex32(queryProofParams.identityCountUpperbound)
+        : queryProofParams.identityCountUpperbound, //from input
+      birth_date_lowerbound: isAndroid
+        ? toPaddedHex32(queryProofParams.birthDateLowerbound)
+        : queryProofParams.birthDateLowerbound, //from input
+      birth_date_upperbound: isAndroid
+        ? toPaddedHex32(queryProofParams.birthDateUpperbound)
+        : queryProofParams.birthDateUpperbound, //from input
+      expiration_date_lowerbound: isAndroid
+        ? toPaddedHex32(queryProofParams.expirationDateLowerbound)
+        : queryProofParams.expirationDateLowerbound, //from input
+      expiration_date_upperbound: isAndroid
+        ? toPaddedHex32(queryProofParams.expirationDateUpperbound)
+        : queryProofParams.expirationDateUpperbound, //from input
+      citizenship_mask: isAndroid
+        ? toPaddedHex32(queryProofParams.citizenshipMask)
+        : queryProofParams.citizenshipMask, //from input
       sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
-      pk_passport_hash:
-        "0x" + passport.getPassportKey().toString(16).padStart(64, "0"),
-      dg1: NoirCircuitParams.formatArray(
-        Array.from(passport.dataGroup1).map((byteValue) =>
-          byteValue.toString()
-        ),
-        true
-      ),
+      pk_passport_hash: toPaddedHex32(passport.getPassportKey()),
+      dg1: isAndroid
+        ? NoirCircuitParams.formatArray(
+            Array.from(passport.dataGroup1).map((byteValue) =>
+              byteValue.toString()
+            ),
+            true
+          )
+        : NoirCircuitParams.formatArray(
+            Array.from(passport.dataGroup1).map((byteValue) =>
+              byteValue.toString()
+            ),
+            false
+          ),
       siblings: smtProof.siblings, //from SMT
-      timestamp:
-        "0x" + passportInfo[1].issueTimestamp.toString(16).padStart(64, "0"),
-      identity_counter:
-        "0x" +
-        passportInfo[0].identityReissueCounter.toString(16).padStart(64, "0"),
+      timestamp: toPaddedHex32(passportInfo[1].issueTimestamp),
+      identity_counter: toPaddedHex32(passportInfo[0].identityReissueCounter),
     };
 
-    if (Platform.OS === "android") {
-      inputs = {
-        event_id:
-          "0x" +
-          BigInt(queryProofParams.eventId).toString(16).padStart(64, "0"), //from input
-        event_data:
-          "0x" +
-          BigInt(queryProofParams.eventData).toString(16).padStart(64, "0"), //from input
-        id_state_root: smtProof.root, //from SMT
-        selector:
-          "0x" +
-          BigInt(queryProofParams.selector).toString(16).padStart(64, "0"), //from input
-        current_date: hexlify(toUtf8Bytes(new Time().format("YYMMDD"))),
-        timestamp_lowerbound:
-          "0x" +
-          BigInt(queryProofParams.timestampLowerbound)
-            .toString(16)
-            .padStart(64, "0"), //from input
-        timestamp_upperbound:
-          "0x" +
-          BigInt(queryProofParams.timestampUpperbound)
-            .toString(16)
-            .padStart(64, "0"), //from input
-        identity_count_lowerbound:
-          "0x" +
-          BigInt(queryProofParams.identityCountLowerbound)
-            .toString(16)
-            .padStart(64, "0"), //from input
-        identity_count_upperbound:
-          "0x" +
-          BigInt(queryProofParams.identityCountUpperbound)
-            .toString(16)
-            .padStart(64, "0"), //from input
-        birth_date_lowerbound:
-          "0x" +
-          BigInt(queryProofParams.birthDateLowerbound)
-            .toString(16)
-            .padStart(64, "0"), //from input
-        birth_date_upperbound:
-          "0x" +
-          BigInt(queryProofParams.birthDateUpperbound)
-            .toString(16)
-            .padStart(64, "0"), //from input
-        expiration_date_lowerbound:
-          "0x" +
-          BigInt(queryProofParams.expirationDateLowerbound)
-            .toString(16)
-            .padStart(64, "0"), //from input
-        expiration_date_upperbound:
-          "0x" +
-          BigInt(queryProofParams.expirationDateUpperbound)
-            .toString(16)
-            .padStart(64, "0"), //from input
-        citizenship_mask:
-          "0x" +
-          BigInt(queryProofParams.citizenshipMask)
-            .toString(16)
-            .padStart(64, "0"), //from input
-        sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
-        pk_passport_hash:
-          "0x" + passport.getPassportKey().toString(16).padStart(64, "0"),
-        dg1: NoirCircuitParams.formatArray(
-          Array.from(passport.dataGroup1).map((byteValue) =>
-            byteValue.toString()
-          ),
-          true
-        ),
-        siblings: smtProof.siblings, //from SMT
-        timestamp:
-          "0x" + passportInfo[1].issueTimestamp.toString(16).padStart(64, "0"),
-        identity_counter:
-          "0x" +
-          passportInfo[0].identityReissueCounter.toString(16).padStart(64, "0"),
-      };
-    }
-
-    const proof = await circuit.prove(JSON.stringify(inputs), byteCode);
-
-    if (!proof) {
-      throw new Error(`Proof generation failed for query proof`);
-    }
-
-    return proof;
+    return circuit.prove(JSON.stringify(inputs), byteCode);
   }
 
   private async verifySodRequest(
