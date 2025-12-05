@@ -114,7 +114,7 @@ cd ios && pod install
 ```typescript
 import * from '@rarimo/rarime-rn-sdk';
 
-onPress = {async() => {
+onPress = { async () => {
     try {
         /** Generate private key for user */
         const userPrivateKey: string = RarimeUtils.generateBJJPrivateKey();
@@ -157,13 +157,13 @@ onPress = {async() => {
         alert('Error: ' + (e as Error).message);
         setBusy(false);
     }
-}
+}}
 ```
 
 ### Register identity with SDK
 
 ```typescript
-onPress = {async() => {
+onPress = { async () => {
     try {
         /**
          * Checks the passport registration status.
@@ -194,6 +194,7 @@ onPress = {async() => {
         alert('Error: ' + (e as Error).message);
         setBusy(false);
     }
+}}
 ```
 
 ### Query Proof Generation Example
