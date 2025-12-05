@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
-      "../app.plugin.js"
+      "./app.plugin.js"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",

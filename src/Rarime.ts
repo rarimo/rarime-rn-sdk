@@ -1,13 +1,22 @@
-import { JsonRpcProvider } from "ethers";
+import { hexlify, JsonRpcProvider, toUtf8Bytes } from "ethers";
 import { DocumentStatus, RarimePassport } from "./RarimePassport";
-import { RegistrationSimple, StateKeeper__factory } from "./types/contracts";
+import {
+  PoseidonSMT__factory,
+  RegistrationSimple,
+  StateKeeper,
+  StateKeeper__factory,
+} from "./types/contracts";
 import { NoirCircuitParams, NoirZKProof } from "./RnNoirModule";
 import { Platform } from "react-native";
 import { HashAlgorithm } from "./helpers/HashAlgorithm";
 import { createRegistrationSimpleContract } from "./helpers/contracts";
 import { RarimeUtils } from "./RarimeUtils";
 import { SignatureAlgorithm } from "./helpers/SignatureAlgorithm";
-import { wrapPem } from "./utils";
+import { toPaddedHex32, wrapPem } from "./utils";
+import { QueryProofParams } from "./types";
+import { SparseMerkleTree } from "./types/contracts/PoseidonSMT";
+import { Poseidon } from "@iden3/js-crypto";
+import { Time } from "@distributedlab/tools";
 
 const ZERO_BYTES = new Uint8Array(64);
 
@@ -48,9 +57,11 @@ export class Rarime {
     this.config = config;
   }
 
-  public async getDocumentStatus(
+  private async getPassportInfo(
     passport: RarimePassport
-  ): Promise<DocumentStatus> {
+  ): Promise<
+    [StateKeeper.PassportInfoStructOutput, StateKeeper.IdentityInfoStructOutput]
+  > {
     const provider = new JsonRpcProvider(
       this.config.apiConfiguration.jsonRpcEvmUrl
     );
@@ -62,15 +73,18 @@ export class Rarime {
 
     const passportKey = passport.getPassportKey();
 
-    let passportKeyHex = passportKey.toString(16).padStart(64, "0");
+    let passportKeyHex = toPaddedHex32(passportKey);
 
-    if (!passportKeyHex.startsWith("0x")) {
-      passportKeyHex = "0x" + passportKeyHex;
-    }
+    const passportInfo = await contract.getPassportInfo(passportKeyHex);
+    return passportInfo;
+  }
 
-    const PassportInfo = await contract.getPassportInfo(passportKeyHex);
+  public async getDocumentStatus(
+    passport: RarimePassport
+  ): Promise<DocumentStatus> {
+    const passportInfo = await this.getPassportInfo(passport);
 
-    const activeIdentity = PassportInfo?.[0].activeIdentity;
+    const activeIdentity = passportInfo?.[0].activeIdentity;
 
     const ZERO_BYTES_STRING =
       "0x" +
@@ -123,7 +137,7 @@ export class Rarime {
 
     const liteRegisterResponseParsed = await liteRegisterResponse.json();
 
-    return liteRegisterResponseParsed.data.tx_hash;
+    return liteRegisterResponseParsed.data.id;
   }
 
   private buildLiteRegisterCalldata(
@@ -140,8 +154,7 @@ export class Rarime {
       dgCommit: BigInt("0x" + proof.pub_signals[0]),
       dg1Hash: Buffer.from(proof.pub_signals[1], "hex"),
       publicKey: verifySodResponseParsed.data.attributes.public_key,
-      passportHash:
-        "0x" + passport.getPassportHash().toString(16).padStart(64, "0"),
+      passportHash: toPaddedHex32(passport.getPassportHash()),
       verifier: verifySodResponseParsed.data.attributes.verifier,
     };
 
@@ -172,35 +185,130 @@ export class Rarime {
 
     const byteCode = await circuit.downloadByteCode();
 
+    const isAndroid = Platform.OS === "android";
     let inputs = {
       dg1: NoirCircuitParams.formatArray(
         Array.from(passport.dataGroup1).map((byteValue) =>
           byteValue.toString()
         ),
-        false
+        isAndroid
       ),
       sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
     };
 
-    if (Platform.OS === "android") {
-      inputs = {
-        dg1: NoirCircuitParams.formatArray(
-          Array.from(passport.dataGroup1).map((byteValue) =>
-            byteValue.toString()
-          ),
-          true
+    return circuit.prove(JSON.stringify(inputs), byteCode);
+  }
+
+  private getSMTProofIndex(passport: RarimePassport): string {
+    const passportKey = passport.getPassportKey();
+
+    const profileKey = RarimeUtils.getProfileKey(
+      this.config.userConfiguration.userPrivateKey
+    );
+
+    const poseidonHash = Poseidon.hash([
+      passportKey,
+      BigInt("0x" + profileKey),
+    ]);
+
+    return toPaddedHex32(poseidonHash);
+  }
+
+  private async getSMTProof(
+    passport: RarimePassport
+  ): Promise<SparseMerkleTree.ProofStruct> {
+    const provider = new JsonRpcProvider(
+      this.config.apiConfiguration.jsonRpcEvmUrl
+    );
+
+    const contract = PoseidonSMT__factory.connect(
+      this.config.contractsConfiguration.poseidonSmtAddress,
+      provider
+    );
+
+    const smtProofIndex = this.getSMTProofIndex(passport);
+
+    return contract.getProof(smtProofIndex);
+  }
+
+  public async generateQueryProof(
+    queryProofParams: QueryProofParams,
+    passport: RarimePassport
+  ): Promise<NoirZKProof> {
+    const circuit = NoirCircuitParams.fromName("query_identity");
+
+    await NoirCircuitParams.downloadTrustedSetup();
+
+    const byteCode = await circuit.downloadByteCode();
+
+    const profileKey =
+      "0x" +
+      RarimeUtils.getProfileKey(this.config.userConfiguration.userPrivateKey);
+
+    const passportInfo = await this.getPassportInfo(passport);
+
+    if (profileKey !== passportInfo[0].activeIdentity) {
+      throw new Error(
+        `profile key mismatch. profileKey = ${profileKey}, passportInfo.activeIdentity = ${passportInfo[0].activeIdentity}`
+      );
+    }
+
+    const smtProof = await this.getSMTProof(passport);
+
+    const isAndroid = Platform.OS === "android";
+    const inputs = {
+      event_id: isAndroid
+        ? toPaddedHex32(queryProofParams.eventId)
+        : queryProofParams.eventId, //from input
+      event_data: isAndroid
+        ? toPaddedHex32(queryProofParams.eventData)
+        : queryProofParams.eventData,
+      id_state_root: smtProof.root, //from SMT
+      selector: isAndroid
+        ? toPaddedHex32(queryProofParams.selector)
+        : queryProofParams.selector, //from input
+      current_date: hexlify(toUtf8Bytes(new Time().format("YYMMDD"))),
+      timestamp_lowerbound: isAndroid
+        ? toPaddedHex32(queryProofParams.timestampLowerbound)
+        : queryProofParams.timestampLowerbound, //from input
+      timestamp_upperbound: isAndroid
+        ? toPaddedHex32(queryProofParams.timestampUpperbound)
+        : queryProofParams.timestampUpperbound, //from input
+      identity_count_lowerbound: isAndroid
+        ? toPaddedHex32(queryProofParams.identityCountLowerbound)
+        : queryProofParams.identityCountLowerbound, //from input
+      identity_count_upperbound: isAndroid
+        ? toPaddedHex32(queryProofParams.identityCountUpperbound)
+        : queryProofParams.identityCountUpperbound, //from input
+      birth_date_lowerbound: isAndroid
+        ? toPaddedHex32(queryProofParams.birthDateLowerbound)
+        : queryProofParams.birthDateLowerbound, //from input
+      birth_date_upperbound: isAndroid
+        ? toPaddedHex32(queryProofParams.birthDateUpperbound)
+        : queryProofParams.birthDateUpperbound, //from input
+      expiration_date_lowerbound: isAndroid
+        ? toPaddedHex32(queryProofParams.expirationDateLowerbound)
+        : queryProofParams.expirationDateLowerbound, //from input
+      expiration_date_upperbound: isAndroid
+        ? toPaddedHex32(queryProofParams.expirationDateUpperbound)
+        : queryProofParams.expirationDateUpperbound, //from input
+      citizenship_mask: isAndroid
+        ? toPaddedHex32(queryProofParams.citizenshipMask)
+        : queryProofParams.citizenshipMask, //from input
+      sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
+      pk_passport_hash: toPaddedHex32(passport.getPassportKey()),
+      dg1: NoirCircuitParams.formatArray(
+        Array.from(passport.dataGroup1).map((byteValue) =>
+          byteValue.toString()
         ),
-        sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
-      };
-    }
+        isAndroid
+      ),
+      siblings: smtProof.siblings, //from SMT
+      timestamp: toPaddedHex32(passportInfo[1].issueTimestamp),
+      identity_counter: toPaddedHex32(passportInfo[0].identityReissueCounter),
+    };
 
-    const proof = await circuit.prove(JSON.stringify(inputs), byteCode);
-
-    if (!proof) {
-      throw new Error(`Proof generation failed for registration proof`);
-    }
-
-    return proof;
+    return circuit.prove(JSON.stringify(inputs), byteCode);
   }
 
   private async verifySodRequest(
