@@ -8,6 +8,8 @@ import {
 import { ProposalData } from "./types/Polls";
 import { BaseVoting } from "./types/contracts/IDCardVoting";
 import { Rarime } from "./Rarime";
+import { RarimePassport } from "./RarimePassport";
+import { Time } from "@distributedlab/tools";
 
 export interface FreedomtoolAPIConfiguration {
   ipfsUrl: string;
@@ -143,5 +145,32 @@ export class Freedomtool {
     const smtProof = await poseidonSmt.getProof(nullifier);
     console.log("smtProof", smtProof);
     return smtProof[2];
+  }
+
+  public async validate(
+    proposalData: ProposalData,
+    passport: RarimePassport,
+    rarime: Rarime
+  ) {
+    let nowTimestamp = new Time().timestamp;
+
+    if (nowTimestamp < proposalData.startTimestamp) {
+      console.log("nowTimestamp", nowTimestamp);
+      console.log("proposalData.startTimestamp", proposalData.startTimestamp);
+      throw new Error("Vouting has not started.");
+    }
+
+    if (nowTimestamp > proposalData.startTimestamp + proposalData.duration) {
+      console.log("nowTimestamp", nowTimestamp);
+      console.log("proposalData.startTimestamp", proposalData.startTimestamp);
+      console.log("proposalData.duration", proposalData.duration);
+      throw new Error("Vouting has ended.");
+    }
+
+    await rarime.validate(proposalData, passport);
+
+    if (await this.isAlreadyVoted(proposalData, rarime)) {
+      throw new Error("User is already voted");
+    }
   }
 }
