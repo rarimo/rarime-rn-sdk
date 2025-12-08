@@ -1,4 +1,5 @@
 export * from './Rarime';
 export * from './RarimeUtils';
 export * from './RarimePassport';
-export * from './types';
+export * from './Freedomtool';
+export {QueryProofParams} from './types';
