@@ -1,11 +1,13 @@
 import { JsonRpcProvider } from "ethers";
 import {
   IDCardVoting__factory,
+  PoseidonSMT__factory,
   ProposalsState,
   ProposalsState__factory,
 } from "./types";
 import { ProposalData } from "./types/Polls";
 import { BaseVoting } from "./types/contracts/IDCardVoting";
+import { Rarime } from "./Rarime";
 
 export interface FreedomtoolAPIConfiguration {
   ipfsUrl: string;
@@ -114,5 +116,32 @@ export class Freedomtool {
     }
 
     return ipfsResponce.json();
+  }
+
+  public async isAlreadyVoted(
+    proposalData: ProposalData,
+    rarime: Rarime
+  ): Promise<boolean> {
+    const provider = new JsonRpcProvider(
+      this.config.apiConfiguration.votingRpcUrl
+    );
+
+    const proposalsState = ProposalsState__factory.connect(
+      this.config.contractsConfiguration.proposalStateAddress,
+      provider
+    );
+
+    const eventId = await proposalsState.getProposalEventId(proposalData.id);
+
+    const nullifier = rarime.getEventNullifier(eventId);
+
+    const poseidonSmt = PoseidonSMT__factory.connect(
+      proposalData.proposalSmtAddress,
+      provider
+    );
+
+    const smtProof = await poseidonSmt.getProof(nullifier);
+    console.log("smtProof", smtProof);
+    return smtProof[2];
   }
 }
