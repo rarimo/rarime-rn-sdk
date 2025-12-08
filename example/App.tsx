@@ -1,6 +1,12 @@
 import { Button, ScrollView, Text, View } from "react-native";
 import React from "react";
-import { generateQueryProof, getPollsData, isAlreadyVoted, liteRegistration } from "./src";
+import {
+  generateQueryProof,
+  getPollsData,
+  isAlreadyVoted,
+  liteRegistration,
+  validate,
+} from "./src";
 
 export default function App() {
   const [busy, setBusy] = React.useState(false);
@@ -67,6 +73,22 @@ export default function App() {
             try {
               const alreadyVoted = await isAlreadyVoted();
               console.log("isAlreadyVoted", alreadyVoted);
+              setBusy(false);
+            } catch (e) {
+              console.error(e);
+              alert("Error: " + (e as Error).message);
+              setBusy(false);
+            }
+          }}
+        />
+        <Button
+          title="Validate"
+          disabled={busy}
+          onPress={async () => {
+            setBusy(true);
+            try {
+              const isValid = await validate();
+              console.log("validate", isValid);
               setBusy(false);
             } catch (e) {
               console.error(e);
