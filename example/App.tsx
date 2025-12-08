@@ -1,6 +1,6 @@
 import { Button, ScrollView, Text, View } from "react-native";
 import React from "react";
-import { generateQueryProof, getPollsData, liteRegistration } from "./src";
+import { generateQueryProof, getPollsData, isAlreadyVoted, liteRegistration } from "./src";
 
 export default function App() {
   const [busy, setBusy] = React.useState(false);
@@ -51,6 +51,22 @@ export default function App() {
             try {
               const pollsData = await getPollsData();
               console.log("pollsData", pollsData);
+              setBusy(false);
+            } catch (e) {
+              console.error(e);
+              alert("Error: " + (e as Error).message);
+              setBusy(false);
+            }
+          }}
+        />
+        <Button
+          title="is Already voted"
+          disabled={busy}
+          onPress={async () => {
+            setBusy(true);
+            try {
+              const alreadyVoted = await isAlreadyVoted();
+              console.log("isAlreadyVoted", alreadyVoted);
               setBusy(false);
             } catch (e) {
               console.error(e);
