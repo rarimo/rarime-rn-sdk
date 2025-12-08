@@ -413,4 +413,18 @@ export class Rarime {
 
     return liteRegisterResponse;
   }
+
+  public getEventNullifier(eventId: bigint): string {
+    const privateKeyPoseidonHash = Poseidon.hash([
+      BigInt("0x" + this.config.userConfiguration.userPrivateKey),
+    ]);
+
+    const eventData = Poseidon.hash([
+      BigInt("0x" + this.config.userConfiguration.userPrivateKey),
+      privateKeyPoseidonHash,
+      eventId,
+    ]);
+
+    return toPaddedHex32(eventData);
+  }
 }
