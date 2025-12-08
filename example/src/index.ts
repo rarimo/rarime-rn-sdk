@@ -1,5 +1,7 @@
 import { PRIVATE_KEY, DG1, SOD, DG15 } from "@env";
 import {
+  Freedomtool,
+  FreedomtoolConfiguration,
   QueryProofParams,
   Rarime,
   RarimeConfiguration,
@@ -114,4 +116,24 @@ export async function generateQueryProof() {
   console.log("queryProof", queryProof);
 
   return queryProof;
+}
+
+export async function getPollsData() {
+  const freedomtoolConfig: FreedomtoolConfiguration = {
+    contractsConfiguration: {
+      proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
+    },
+    apiConfiguration: {
+      ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
+      votingRelayerUrl: "",
+      votingRpcUrl: "https://rpc.qtestnet.org",
+    },
+  };
+
+  const proposalId = "218";
+  console.log("proposalId ", proposalId);
+
+  const freedomtool = new Freedomtool(freedomtoolConfig);
+
+  return freedomtool.getProposalData(proposalId);
 }

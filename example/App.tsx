@@ -1,6 +1,6 @@
 import { Button, ScrollView, Text, View } from "react-native";
 import React from "react";
-import { generateQueryProof, liteRegistration } from "./src";
+import { generateQueryProof, getPollsData, liteRegistration } from "./src";
 
 export default function App() {
   const [busy, setBusy] = React.useState(false);
@@ -34,6 +34,23 @@ export default function App() {
             try {
               const queryProof = await generateQueryProof();
               console.log("queryProof", queryProof);
+              setBusy(false);
+            } catch (e) {
+              console.error(e);
+              alert("Error: " + (e as Error).message);
+              setBusy(false);
+            }
+          }}
+        />
+
+        <Button
+          title="Get proposal data"
+          disabled={busy}
+          onPress={async () => {
+            setBusy(true);
+            try {
+              const pollsData = await getPollsData();
+              console.log("pollsData", pollsData);
               setBusy(false);
             } catch (e) {
               console.error(e);
