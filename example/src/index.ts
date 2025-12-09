@@ -1,7 +1,7 @@
 import { PRIVATE_KEY, DG1, SOD, DG15 } from "@env";
 import {
-  Freedomtool,
-  FreedomtoolConfiguration,
+  FreedomTool,
+  FreedomToolConfiguration,
   QueryProofParams,
   Rarime,
   RarimeConfiguration,
@@ -118,47 +118,41 @@ export async function generateQueryProof() {
   return queryProof;
 }
 
-export async function getPollsData() {
-  const freedomtoolConfig: FreedomtoolConfiguration = {
-    contractsConfiguration: {
+export async function getProposalData(proposalId: string) {
+  const freedomtoolConfig: FreedomToolConfiguration = {
+    contracts: {
       proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
     },
-    apiConfiguration: {
+    api: {
       ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
       votingRelayerUrl: "https://api.stage.freedomtool.org",
       votingRpcUrl: "https://rpc.qtestnet.org",
     },
   };
 
-  const proposalId = "228";
-  console.log("proposalId ", proposalId);
-
-  const freedomtool = new Freedomtool(freedomtoolConfig);
+  const freedomtool = new FreedomTool(freedomtoolConfig);
 
   return freedomtool.getProposalData(proposalId);
 }
 
-export async function isAlreadyVoted(): Promise<boolean> {
+export async function isAlreadyVoted(proposalId: string): Promise<boolean> {
   const userPrivateKey =
     PRIVATE_KEY && PRIVATE_KEY.length > 0 ? PRIVATE_KEY : "";
 
   console.log(userPrivateKey);
 
-  const freedomtoolConfig: FreedomtoolConfiguration = {
-    contractsConfiguration: {
+  const freedomtoolConfig: FreedomToolConfiguration = {
+    contracts: {
       proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
     },
-    apiConfiguration: {
+    api: {
       ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
       votingRelayerUrl: "",
       votingRpcUrl: "https://rpc.qtestnet.org",
     },
   };
 
-  const proposalId = "218";
-  console.log("proposalId ", proposalId);
-
-  const freedomtool = new Freedomtool(freedomtoolConfig);
+  const freedomtool = new FreedomTool(freedomtoolConfig);
 
   const rarimeConfig: RarimeConfiguration = {
     contractsConfiguration: {
@@ -184,27 +178,24 @@ export async function isAlreadyVoted(): Promise<boolean> {
   return freedomtool.isAlreadyVoted(proposalData, rarime);
 }
 
-export async function validate() {
+export async function validate(proposalId: string) {
   const userPrivateKey =
     PRIVATE_KEY && PRIVATE_KEY.length > 0 ? PRIVATE_KEY : "";
 
   console.log(userPrivateKey);
 
-  const freedomtoolConfig: FreedomtoolConfiguration = {
-    contractsConfiguration: {
+  const freedomtoolConfig: FreedomToolConfiguration = {
+    contracts: {
       proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
     },
-    apiConfiguration: {
+    api: {
       ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
       votingRelayerUrl: "",
       votingRpcUrl: "https://rpc.qtestnet.org",
     },
   };
 
-  const proposalId = "208";
-  console.log("proposalId ", proposalId);
-
-  const freedomtool = new Freedomtool(freedomtoolConfig);
+  const freedomtool = new FreedomTool(freedomtoolConfig);
 
   const rarimeConfig: RarimeConfiguration = {
     contractsConfiguration: {
@@ -233,33 +224,30 @@ export async function validate() {
   console.log("rarimeConfig", rarimeConfig);
 
   const rarime = new Rarime(rarimeConfig);
-  const pollData = await getPollsData();
+  const pollData = await getProposalData(proposalId);
 
-  await freedomtool.validate(pollData, passport, rarime);
+  await freedomtool.verify(pollData, passport, rarime);
   console.log("freedomtool validate: valid");
 }
 
-export async function submitVote() {
+export async function submitVote(proposalId: string) {
   const userPrivateKey =
     PRIVATE_KEY && PRIVATE_KEY.length > 0 ? PRIVATE_KEY : "";
 
   console.log(userPrivateKey);
 
-  const freedomtoolConfig: FreedomtoolConfiguration = {
-    contractsConfiguration: {
+  const freedomtoolConfig: FreedomToolConfiguration = {
+    contracts: {
       proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
     },
-    apiConfiguration: {
+    api: {
       ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
       votingRelayerUrl: "https://api.stage.freedomtool.org",
       votingRpcUrl: "https://rpc.qtestnet.org",
     },
   };
 
-  const proposalId = "228";
-  console.log("proposalId ", proposalId);
-
-  const freedomtool = new Freedomtool(freedomtoolConfig);
+  const freedomtool = new FreedomTool(freedomtoolConfig);
 
   const rarimeConfig: RarimeConfiguration = {
     contractsConfiguration: {
@@ -288,16 +276,16 @@ export async function submitVote() {
   console.log("rarimeConfig", rarimeConfig);
 
   const rarime = new Rarime(rarimeConfig);
-  const pollData = await getPollsData();
+  const proposalData = await getProposalData(proposalId);
 
-  console.log("pollData", pollData);
+  console.log("pollData", proposalData);
 
-  const submitVoteResult = await freedomtool.submitVote(
-    [0],
-    pollData,
+  const submitVoteResult = await freedomtool.submitProposal({
+    answers: [0],
+    proposalData: proposalData,
     rarime,
-    passport
-  );
+    passport,
+  });
 
   console.log("submitVoteResult", submitVoteResult);
 }

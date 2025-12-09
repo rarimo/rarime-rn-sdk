@@ -1,8 +1,8 @@
-import { Button, ScrollView, Text, View } from "react-native";
+import { Button, ScrollView, Text, TextInput, View } from "react-native";
 import React from "react";
 import {
   generateQueryProof,
-  getPollsData,
+  getProposalData,
   isAlreadyVoted,
   liteRegistration,
   submitVote,
@@ -11,6 +11,7 @@ import {
 
 export default function App() {
   const [busy, setBusy] = React.useState(false);
+  const [proposalId, setProposalId] = React.useState("");
 
   return (
     <View style={styles.container}>
@@ -49,14 +50,19 @@ export default function App() {
             }
           }}
         />
-
+        <TextInput
+          value={proposalId}
+          onChangeText={setProposalId}
+          placeholder="Enter your proposal id here"
+          editable={busy}
+        />
         <Button
           title="Get proposal data"
           disabled={busy}
           onPress={async () => {
             setBusy(true);
             try {
-              const pollsData = await getPollsData();
+              const pollsData = await getProposalData(proposalId);
               console.log("pollsData", pollsData);
               setBusy(false);
             } catch (e) {
@@ -72,7 +78,7 @@ export default function App() {
           onPress={async () => {
             setBusy(true);
             try {
-              const alreadyVoted = await isAlreadyVoted();
+              const alreadyVoted = await isAlreadyVoted(proposalId);
               console.log("isAlreadyVoted", alreadyVoted);
               setBusy(false);
             } catch (e) {
@@ -88,7 +94,7 @@ export default function App() {
           onPress={async () => {
             setBusy(true);
             try {
-              const isValid = await validate();
+              const isValid = await validate(proposalId);
               console.log("validate", isValid);
               setBusy(false);
             } catch (e) {
@@ -104,7 +110,7 @@ export default function App() {
           onPress={async () => {
             setBusy(true);
             try {
-              await submitVote();
+              await submitVote(proposalId);
               console.log("send vote is successful");
               setBusy(false);
             } catch (e) {
