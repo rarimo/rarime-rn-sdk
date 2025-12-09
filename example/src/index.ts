@@ -282,7 +282,7 @@ export async function submitVote(proposalId: string) {
 
   const submitVoteResult = await freedomtool.submitProposal({
     answers: [0],
-    proposalInfo: proposalInfo,
+    proposalInfo,
     rarime,
     passport,
   });

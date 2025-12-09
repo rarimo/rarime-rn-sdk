@@ -21,7 +21,8 @@ import { RarimePassport } from "./RarimePassport";
 import { Time } from "@distributedlab/tools";
 import { createIDCardVotingContract } from "./helpers/contracts";
 import { NoirZKProof } from "./RnNoirModule";
-export const MRZ_ZERO_DATE = 52983525027888n;
+
+export const MRZ_ZERO_DATE = 52983525027888n; // "000000"
 export interface FreedomToolAPIConfiguration {
   ipfsUrl: string;
   votingRelayerUrl: string;
@@ -241,7 +242,7 @@ export class FreedomTool {
     return zeroPadValue(toBeHex(truncated), 32);
   }
 
-  private async getEventId(ProposalInfo: ProposalInfo): Promise<bigint> {
+  private async getEventId(proposalInfo: ProposalInfo): Promise<bigint> {
     const provider = new JsonRpcProvider(this.config.api.votingRpcUrl);
 
     const proposalsState = ProposalsState__factory.connect(
@@ -249,12 +250,12 @@ export class FreedomTool {
       provider
     );
 
-    return proposalsState.getProposalEventId(ProposalInfo.id);
+    return proposalsState.getProposalEventId(proposalInfo.id);
   }
 
   private async buildQueryProofParams(
     answers: number[],
-    ProposalInfo: ProposalInfo,
+    proposalInfo: ProposalInfo,
     passportInfo: [
       StateKeeper.PassportInfoStructOutput,
       StateKeeper.IdentityInfoStructOutput
@@ -262,28 +263,28 @@ export class FreedomTool {
   ): Promise<QueryProofParams> {
     const ROOT_VALIDITY = 3600n;
 
-    const eventId = await this.getEventId(ProposalInfo);
+    const eventId = await this.getEventId(proposalInfo);
 
     const eventData = this.getEventData(answers);
 
     const timestamp_upperbound =
       passportInfo[1][1] > 0
         ? passportInfo[1][1]
-        : ProposalInfo.criteria.timestampUpperbound - ROOT_VALIDITY;
+        : proposalInfo.criteria.timestampUpperbound - ROOT_VALIDITY;
 
     const queryProofParams: QueryProofParams = {
       eventId: eventId.toString(),
       eventData: eventData,
-      selector: ProposalInfo.criteria.selector.toString(),
+      selector: proposalInfo.criteria.selector.toString(),
       timestampLowerbound: "0",
       timestampUpperbound: timestamp_upperbound.toString(),
       identityCountLowerbound: "0",
       identityCountUpperbound:
-        ProposalInfo.criteria.identityCountUpperbound.toString(),
-      birthDateLowerbound: ProposalInfo.criteria.birthDateLowerbound.toString(),
-      birthDateUpperbound: ProposalInfo.criteria.birthDateUpperbound.toString(),
+        proposalInfo.criteria.identityCountUpperbound.toString(),
+      birthDateLowerbound: proposalInfo.criteria.birthDateLowerbound.toString(),
+      birthDateUpperbound: proposalInfo.criteria.birthDateUpperbound.toString(),
       expirationDateLowerbound:
-        ProposalInfo.criteria.expirationDateLowerbound.toString(),
+        proposalInfo.criteria.expirationDateLowerbound.toString(),
       expirationDateUpperbound: MRZ_ZERO_DATE.toString(),
       citizenshipMask: "0",
     };
@@ -293,7 +294,7 @@ export class FreedomTool {
 
   private async buildProposalCallData(
     answers: number[],
-    ProposalInfo: ProposalInfo,
+    proposalInfo: ProposalInfo,
     rarime: Rarime,
     passport: RarimePassport,
     queryProof: NoirZKProof,
@@ -303,7 +304,7 @@ export class FreedomTool {
     ]
   ): Promise<string> {
     const idCardVoting = createIDCardVotingContract(
-      ProposalInfo.sendVoteContractAddress,
+      proposalInfo.sendVoteContractAddress,
       new JsonRpcProvider(this.config.api.votingRpcUrl)
     );
 
@@ -311,7 +312,7 @@ export class FreedomTool {
     const userDataEncoded = abiCode.encode(
       ["uint256", "uint256[]", "tuple(uint256,uint256,uint256)"],
       [
-        ProposalInfo.id,
+        proposalInfo.id,
         // votes mask
         answers.map((v) => 1 << Number(v)),
         // User payload: (nullifier, citizenship, identity_creation_timestamp)
@@ -340,13 +341,13 @@ export class FreedomTool {
 
   private async sendProposalRequest(
     txCallData: string,
-    ProposalInfo: ProposalInfo
+    proposalInfo: ProposalInfo
   ): Promise<string> {
     const sendVoteRequest = {
       data: {
         attributes: {
           tx_data: txCallData,
-          destination: ProposalInfo.sendVoteContractAddress,
+          destination: proposalInfo.sendVoteContractAddress,
         },
       },
     };
