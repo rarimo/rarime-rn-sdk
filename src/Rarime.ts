@@ -430,7 +430,7 @@ export class Rarime {
 
   public async validate(proposalData: ProposalData, passport: RarimePassport) {
     const passportInfo = await this.getPassportInfo(passport);
-    console.log("passportInfo", passportInfo);
+    
     if (passportInfo[1][1] > proposalData.criteria.timestampUpperbound) {
       throw new Error("Timestamp creation identity is bigger then upperbound");
     }
@@ -440,6 +440,6 @@ export class Rarime {
     }
 
     passport.validate(proposalData);
-    console.log("passportValidation");
+   
   }
 }

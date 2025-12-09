@@ -351,9 +351,8 @@ export class RarimePassport {
   }
 
   validate(proposalData: ProposalData) {
-    console.log("passport");
     const mrz = this.getMRZData();
-    console.log("mrz", mrz);
+
     if (
       proposalData.criteria.citizenshipWhitelist.length &&
       !proposalData.criteria.citizenshipWhitelist.includes(
@@ -362,40 +361,35 @@ export class RarimePassport {
     ) {
       throw new Error("Citizen is not in whitelis");
     }
-    console.log("contract");
+
     if (
       proposalData.criteria.sex !== 0n &&
       proposalData.criteria.sex === BigInt(mrz.sex)
     ) {
       throw new Error("Sex mismatch");
     }
-    console.log("sex");
+
     if (
       proposalData.criteria.birthDateLowerbound != 52983525027888n &&
       proposalData.criteria.birthDateLowerbound > BigInt(mrz.birthDate)
     ) {
       throw new Error("Birth date is lover then lowerbound");
     }
-    console.log("BiD lover");
+
     if (
       proposalData.criteria.birthDateUpperbound != 52983525027888n &&
       proposalData.criteria.birthDateUpperbound < BigInt(mrz.birthDate)
     ) {
       throw new Error("Birth date is higher then upperbound");
     }
-    console.log("BiD lover");
+
     if (
       proposalData.criteria.expirationDateLowerbound != 52983525027888n &&
-      proposalData.criteria.expirationDateLowerbound > BigInt("0x" + Buffer.from(mrz.expiryDate).toString("hex"))
+      proposalData.criteria.expirationDateLowerbound >
+        BigInt("0x" + Buffer.from(mrz.expiryDate).toString("hex"))
     ) {
-      console.log(
-        "proposalData.criteria.expirationDateLowerbound",
-        proposalData.criteria.expirationDateLowerbound
-      );
-      console.log("BigInt(mrz.expiryDate)", BigInt(mrz.expiryDate));
       throw new Error("Expiration date is lover then lowerbound");
     }
-    console.log("Expiration lover");
   }
 
   public getMRZData(): MRZData {

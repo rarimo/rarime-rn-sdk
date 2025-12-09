@@ -44,9 +44,9 @@ export class Freedomtool {
 
   public async getProposalData(proposalId: string): Promise<ProposalData> {
     const contractData = await this.getProposalDataContract(proposalId);
-    console.log("contractData", contractData);
+
     const ipfsData = await this.getProposalDataIpfs(contractData[2][4]);
-    console.log("ipfsData", ipfsData);
+
     const proposalCriteria = await this.getProposalCriteria(
       proposalId,
       contractData[2][5][0]
@@ -76,7 +76,7 @@ export class Freedomtool {
       votingResults: contractData[3],
       description: ipfsData.description ?? "",
     };
-    console.log("proposalData", proposalData);
+
     return proposalData;
   }
 
@@ -152,7 +152,7 @@ export class Freedomtool {
     );
 
     const smtProof = await poseidonSmt.getProof(nullifier);
-    console.log("smtProof", smtProof);
+
     return smtProof[2];
   }
 
@@ -164,15 +164,10 @@ export class Freedomtool {
     let nowTimestamp = new Time().timestamp;
 
     if (nowTimestamp < proposalData.startTimestamp) {
-      console.log("nowTimestamp", nowTimestamp);
-      console.log("proposalData.startTimestamp", proposalData.startTimestamp);
       throw new Error("Vouting has not started.");
     }
 
     if (nowTimestamp > proposalData.startTimestamp + proposalData.duration) {
-      console.log("nowTimestamp", nowTimestamp);
-      console.log("proposalData.startTimestamp", proposalData.startTimestamp);
-      console.log("proposalData.duration", proposalData.duration);
       throw new Error("Vouting has ended.");
     }
 
@@ -220,7 +215,7 @@ export class Freedomtool {
       this.config.contractsConfiguration.proposalStateAddress,
       provider
     );
-    console.log("proposal state");
+
     const eventId = await proposalsState.getProposalEventId(proposalData.id);
 
     const eventData = this.getEventData(answers);
@@ -248,19 +243,19 @@ export class Freedomtool {
       expirationDateUpperbound: "52983525027888",
       citizenshipMask: "0",
     };
-    console.log("queryProofParams");
+
     const queryProof = await rarime.generateQueryProof(
       queryProofParams,
       passport
     );
-    console.log("queryProof");
+
     const idCardVoting = createIDCardVotingContract(
       proposalData.sendVoteContractAddress,
       new JsonRpcProvider(this.config.apiConfiguration.votingRpcUrl)
     );
-    console.log("idCardVoting");
+
     const smtProof = await rarime.getSMTProof(passport);
-    console.log("smtProof");
+
     const abiCode = new AbiCoder();
     const userDataEncoded = abiCode.encode(
       ["uint256", "uint256[]", "tuple(uint256,uint256,uint256)"],
@@ -276,17 +271,17 @@ export class Freedomtool {
         ],
       ]
     );
-    console.log("userDataEncoded");
+
     const txCallData = idCardVoting.contractInterface.encodeFunctionData(
       "executeTD1Noir",
       [
         smtProof.root,
         "0x" + queryProof.pub_signals[14],
         userDataEncoded,
-        "0x"+queryProof.proof,
+        "0x" + queryProof.proof,
       ]
     );
-    console.log("txCallData", txCallData);
+
     const sendVoteRequest = {
       data: {
         attributes: {
@@ -295,12 +290,7 @@ export class Freedomtool {
         },
       },
     };
-    console.log("sendVoteRequest");
-    console.log(
-      "send vote address",
-      this.config.apiConfiguration.votingRelayerUrl +
-        "/integrations/proof-verification-relayer/v3/vote"
-    );
+
     const sendVoteResponse = await fetch(
       this.config.apiConfiguration.votingRelayerUrl +
         "/integrations/proof-verification-relayer/v3/vote",
@@ -312,14 +302,12 @@ export class Freedomtool {
         body: JSON.stringify(sendVoteRequest),
       }
     );
-    console.log("sendVoteResponse");
+
     if (!sendVoteResponse.ok) {
-      console.log("sendVoteResponse", sendVoteResponse);
       throw new Error(`HTTP error ${sendVoteResponse.status}}`);
     }
 
     const sendVoteResponseParsed = await sendVoteResponse.json();
-    console.log("sendVoteResponseParsed", sendVoteResponseParsed);
 
     return sendVoteResponseParsed.data.id;
   }
