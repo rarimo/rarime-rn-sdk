@@ -2,7 +2,7 @@ import { Button, ScrollView, Text, TextInput, View } from "react-native";
 import React from "react";
 import {
   generateQueryProof,
-  getProposalData,
+  getProposalInfo,
   isAlreadyVoted,
   liteRegistration,
   submitVote,
@@ -62,7 +62,7 @@ export default function App() {
           onPress={async () => {
             setBusy(true);
             try {
-              const pollsData = await getProposalData(proposalId);
+              const pollsData = await getProposalInfo(proposalId);
               console.log("pollsData", pollsData);
               setBusy(false);
             } catch (e) {

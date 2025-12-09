@@ -14,7 +14,7 @@ import {
   QueryProofParams,
   StateKeeper,
 } from "./types";
-import { ProposalData, ProposalQuestion } from "./types/proposal";
+import { ProposalInfo, ProposalQuestion } from "./types/proposal";
 import { BaseVoting } from "./types/contracts/IDCardVoting";
 import { Rarime } from "./Rarime";
 import { RarimePassport } from "./RarimePassport";
@@ -30,7 +30,7 @@ export interface FreedomToolAPIConfiguration {
 
 export interface SubmitProposalParams {
   answers: number[];
-  proposalData: ProposalData;
+  proposalInfo: ProposalInfo;
   rarime: Rarime;
   passport: RarimePassport;
 }
@@ -59,17 +59,17 @@ export class FreedomTool {
     this.config = config;
   }
 
-  public async getProposalData(proposalId: string): Promise<ProposalData> {
-    const contractData = await this.getProposalDataFromContracts(proposalId);
+  public async getProposalInfo(proposalId: string): Promise<ProposalInfo> {
+    const contractData = await this.getProposalInfoFromContracts(proposalId);
 
-    const ipfsData = await this.getProposalDataFromIpfs(contractData[2][4]);
+    const ipfsData = await this.getProposalMetadata(contractData[2][4]);
 
-    const proposalCriteria = await this.getProposalCriteria(
+    const proposalCriteria = await this.getProposalRules(
       proposalId,
       contractData[2][5][0]
     );
 
-    const proposalData: ProposalData = {
+    const proposalInfo: ProposalInfo = {
       id: proposalId,
       proposalSmtAddress: contractData[0],
       criteria: {
@@ -93,11 +93,11 @@ export class FreedomTool {
       description: ipfsData.description ?? "",
     };
 
-    return proposalData;
+    return proposalInfo;
   }
 
   public async isAlreadyVoted(
-    proposalData: ProposalData,
+    proposalInfo: ProposalInfo,
     rarime: Rarime
   ): Promise<boolean> {
     const provider = new JsonRpcProvider(this.config.api.votingRpcUrl);
@@ -107,12 +107,12 @@ export class FreedomTool {
       provider
     );
 
-    const eventId = await proposalsState.getProposalEventId(proposalData.id);
+    const eventId = await proposalsState.getProposalEventId(proposalInfo.id);
 
     const nullifier = rarime.getEventNullifier(eventId);
 
     const poseidonSmt = PoseidonSMT__factory.connect(
-      proposalData.proposalSmtAddress,
+      proposalInfo.proposalSmtAddress,
       provider
     );
 
@@ -122,40 +122,40 @@ export class FreedomTool {
   }
 
   public async verify(
-    proposalData: ProposalData,
+    proposalInfo: ProposalInfo,
     passport: RarimePassport,
     rarime: Rarime
   ) {
     let nowTimestamp = new Time().timestamp;
 
-    if (nowTimestamp < proposalData.startTimestamp) {
+    if (nowTimestamp < proposalInfo.startTimestamp) {
       throw new Error("Voting has not started.");
     }
 
-    if (nowTimestamp > proposalData.startTimestamp + proposalData.duration) {
+    if (nowTimestamp > proposalInfo.startTimestamp + proposalInfo.duration) {
       throw new Error("Voting has ended.");
     }
 
-    await rarime.validateIdentity(proposalData, passport);
+    await rarime.validateIdentity(proposalInfo, passport);
 
-    if (await this.isAlreadyVoted(proposalData, rarime)) {
+    if (await this.isAlreadyVoted(proposalInfo, rarime)) {
       throw new Error("User has already voted");
     }
   }
 
   public async submitProposal({
     answers,
-    proposalData,
+    proposalInfo: proposalInfo,
     rarime,
     passport,
   }: SubmitProposalParams): Promise<string> {
-    await this.verify(proposalData, passport, rarime);
+    await this.verify(proposalInfo, passport, rarime);
 
     const passportInfo = await rarime.getPassportInfo(passport);
 
     const queryProofParams = await this.buildQueryProofParams(
       answers,
-      proposalData,
+      proposalInfo,
       passportInfo
     );
 
@@ -166,19 +166,19 @@ export class FreedomTool {
 
     const txCallData = await this.buildProposalCallData(
       answers,
-      proposalData,
+      proposalInfo,
       rarime,
       passport,
       queryProof,
       passportInfo
     );
 
-    const txHash = await this.sendProposalRequest(txCallData, proposalData);
+    const txHash = await this.sendProposalRequest(txCallData, proposalInfo);
 
     return txHash;
   }
 
-  private async getProposalCriteria(
+  private async getProposalRules(
     proposalId: string,
     sendVoteContractAddress: string
   ): Promise<BaseVoting.ProposalRulesStructOutput> {
@@ -192,7 +192,7 @@ export class FreedomTool {
     return contract.getProposalRules(proposalId);
   }
 
-  private async getProposalDataFromContracts(
+  private async getProposalInfoFromContracts(
     proposalId: string
   ): Promise<ProposalsState.ProposalInfoStructOutput> {
     const provider = new JsonRpcProvider(this.config.api.votingRpcUrl);
@@ -205,7 +205,7 @@ export class FreedomTool {
     return contract.getProposalInfo(proposalId);
   }
 
-  private async getProposalDataFromIpfs(
+  private async getProposalMetadata(
     ipfsCid: string
   ): Promise<IPFSProposalMetadata> {
     const ipfsResponse = await fetch(this.config.api.ipfsUrl + ipfsCid, {
@@ -241,7 +241,7 @@ export class FreedomTool {
     return zeroPadValue(toBeHex(truncated), 32);
   }
 
-  private async getEventId(proposalData: ProposalData): Promise<bigint> {
+  private async getEventId(ProposalInfo: ProposalInfo): Promise<bigint> {
     const provider = new JsonRpcProvider(this.config.api.votingRpcUrl);
 
     const proposalsState = ProposalsState__factory.connect(
@@ -249,12 +249,12 @@ export class FreedomTool {
       provider
     );
 
-    return proposalsState.getProposalEventId(proposalData.id);
+    return proposalsState.getProposalEventId(ProposalInfo.id);
   }
 
   private async buildQueryProofParams(
     answers: number[],
-    proposalData: ProposalData,
+    ProposalInfo: ProposalInfo,
     passportInfo: [
       StateKeeper.PassportInfoStructOutput,
       StateKeeper.IdentityInfoStructOutput
@@ -262,28 +262,28 @@ export class FreedomTool {
   ): Promise<QueryProofParams> {
     const ROOT_VALIDITY = 3600n;
 
-    const eventId = await this.getEventId(proposalData);
+    const eventId = await this.getEventId(ProposalInfo);
 
     const eventData = this.getEventData(answers);
 
     const timestamp_upperbound =
       passportInfo[1][1] > 0
         ? passportInfo[1][1]
-        : proposalData.criteria.timestampUpperbound - ROOT_VALIDITY;
+        : ProposalInfo.criteria.timestampUpperbound - ROOT_VALIDITY;
 
     const queryProofParams: QueryProofParams = {
       eventId: eventId.toString(),
       eventData: eventData,
-      selector: proposalData.criteria.selector.toString(),
+      selector: ProposalInfo.criteria.selector.toString(),
       timestampLowerbound: "0",
       timestampUpperbound: timestamp_upperbound.toString(),
       identityCountLowerbound: "0",
       identityCountUpperbound:
-        proposalData.criteria.identityCountUpperbound.toString(),
-      birthDateLowerbound: proposalData.criteria.birthDateLowerbound.toString(),
-      birthDateUpperbound: proposalData.criteria.birthDateUpperbound.toString(),
+        ProposalInfo.criteria.identityCountUpperbound.toString(),
+      birthDateLowerbound: ProposalInfo.criteria.birthDateLowerbound.toString(),
+      birthDateUpperbound: ProposalInfo.criteria.birthDateUpperbound.toString(),
       expirationDateLowerbound:
-        proposalData.criteria.expirationDateLowerbound.toString(),
+        ProposalInfo.criteria.expirationDateLowerbound.toString(),
       expirationDateUpperbound: MRZ_ZERO_DATE.toString(),
       citizenshipMask: "0",
     };
@@ -293,7 +293,7 @@ export class FreedomTool {
 
   private async buildProposalCallData(
     answers: number[],
-    proposalData: ProposalData,
+    ProposalInfo: ProposalInfo,
     rarime: Rarime,
     passport: RarimePassport,
     queryProof: NoirZKProof,
@@ -303,7 +303,7 @@ export class FreedomTool {
     ]
   ): Promise<string> {
     const idCardVoting = createIDCardVotingContract(
-      proposalData.sendVoteContractAddress,
+      ProposalInfo.sendVoteContractAddress,
       new JsonRpcProvider(this.config.api.votingRpcUrl)
     );
 
@@ -311,7 +311,7 @@ export class FreedomTool {
     const userDataEncoded = abiCode.encode(
       ["uint256", "uint256[]", "tuple(uint256,uint256,uint256)"],
       [
-        proposalData.id,
+        ProposalInfo.id,
         // votes mask
         answers.map((v) => 1 << Number(v)),
         // User payload: (nullifier, citizenship, identity_creation_timestamp)
@@ -340,13 +340,13 @@ export class FreedomTool {
 
   private async sendProposalRequest(
     txCallData: string,
-    proposalData: ProposalData
+    ProposalInfo: ProposalInfo
   ): Promise<string> {
     const sendVoteRequest = {
       data: {
         attributes: {
           tx_data: txCallData,
-          destination: proposalData.sendVoteContractAddress,
+          destination: ProposalInfo.sendVoteContractAddress,
         },
       },
     };

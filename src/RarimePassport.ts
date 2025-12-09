@@ -5,7 +5,7 @@ import { HashAlgorithm } from "./helpers/HashAlgorithm";
 import { Sod } from "./utils";
 import { DG1, DG15, SOD } from "@li0ard/tsemrtd";
 import { CertificateSet } from "@peculiar/asn1-cms";
-import { ProposalData } from "./types";
+import { ProposalInfo } from "./types";
 import { MRZ_ZERO_DATE } from "./Freedomtool";
 
 export interface MRZData {
@@ -121,88 +121,6 @@ export class RarimePassport {
     return sod.ldsObject.algorithm.algorithm;
   }
 
-  public getDgHashAlgorithm(): string {
-    const buffer = this.sod;
-
-    const asn1Result = asn1js.fromBER(buffer);
-
-    if (asn1Result.offset === -1) {
-      throw new Error("ASN1DecodeError: Failed to decode BER data");
-    }
-
-    const blocks = [asn1Result.result];
-
-    const app23Block = blocks.find(
-      (block) => block.idBlock.tagClass === 2 && block.idBlock.tagNumber === 23
-    );
-
-    if (!app23Block) {
-      throw new Error("Expected Application 23 SEQUENCE in the root");
-    }
-
-    const seqInApp23 = (app23Block.valueBlock as any)
-      .value as asn1js.BaseBlock[];
-
-    if (!Array.isArray(seqInApp23)) {
-      throw new Error("Expected SEQUENCE inside Application 23");
-    }
-
-    const tagged0Block = seqInApp23.find(
-      (block) => block.idBlock.tagClass === 3 && block.idBlock.tagNumber === 0
-    );
-
-    if (!tagged0Block) {
-      throw new Error("No [0] tagged block found");
-    }
-
-    const seqInTagged0 = (tagged0Block.valueBlock as any)
-      .value as asn1js.BaseBlock[];
-
-    if (!Array.isArray(seqInTagged0)) {
-      throw new Error("Expected SEQUENCE inside [0]");
-    }
-
-    const setBlock = seqInTagged0.find(
-      (block) => block.idBlock.tagClass === 1 && block.idBlock.tagNumber === 17
-    );
-
-    if (!setBlock) {
-      throw new Error("No SET found inside [0] SEQUENCE");
-    }
-
-    const setContent = (setBlock.valueBlock as any).value as asn1js.BaseBlock[];
-    if (!setContent || setContent.length === 0) {
-      throw new Error("SET is empty");
-    }
-
-    const innerSeq = setContent[0];
-
-    if (innerSeq.idBlock.tagNumber !== 16) {
-      throw new Error("Expected SEQUENCE as first element of SET");
-    }
-
-    const innerSeqContent = (innerSeq.valueBlock as any)
-      .value as asn1js.BaseBlock[];
-
-    if (!innerSeqContent || innerSeqContent.length === 0) {
-      throw new Error("Inner SEQUENCE is empty");
-    }
-
-    const oidBlock = innerSeqContent[0];
-
-    if (oidBlock.idBlock.tagNumber !== 6) {
-      throw new Error(
-        "Expected ObjectIdentifier as first element of inner SEQUENCE"
-      );
-    }
-
-    const oidValue = (
-      oidBlock as asn1js.ObjectIdentifier
-    ).valueBlock.toString();
-
-    return oidValue;
-  }
-
   public getSignatureAlgorithm(): string {
     const buffer = Buffer.from(this.sod);
     const sod = SOD.load(buffer);
@@ -255,9 +173,7 @@ export class RarimePassport {
 
     const namesPart = mrz.slice(60);
     // split by '<<' like in Rust .split("<<")
-    const names = namesPart.split("<<");
-    const lastNameRaw = names[0] ?? "";
-    const firstNameRaw = names[1] ?? "";
+    const [firstName = "", lastName = ""] = namesPart.split("<<");
 
     const result: MRZData = {
       documentType,
@@ -266,8 +182,8 @@ export class RarimePassport {
       birthDate,
       sex,
       expiryDate,
-      lastName: lastNameRaw,
-      firstName: firstNameRaw,
+      lastName: firstName,
+      firstName: lastName,
     };
     return result;
   }
@@ -279,12 +195,12 @@ export class RarimePassport {
     return certificates;
   }
 
-  public verifyPassport(proposalData: ProposalData) {
+  public verifyPassport(proposalInfo: ProposalInfo) {
     const mrz = this.getMRZData();
 
     if (
-      proposalData.criteria.citizenshipWhitelist.length &&
-      !proposalData.criteria.citizenshipWhitelist.includes(
+      proposalInfo.criteria.citizenshipWhitelist.length &&
+      !proposalInfo.criteria.citizenshipWhitelist.includes(
         BigInt("0x" + Buffer.from(mrz.issuingCountry).toString("hex"))
       )
     ) {
@@ -292,33 +208,33 @@ export class RarimePassport {
     }
 
     if (
-      proposalData.criteria.sex !== 0n &&
-      proposalData.criteria.sex !== BigInt(mrz.sex)
+      proposalInfo.criteria.sex !== 0n &&
+      proposalInfo.criteria.sex !== BigInt(mrz.sex)
     ) {
       throw new Error(
-        `Sex mismatch, expected ${proposalData.criteria.sex}, received ${BigInt(
+        `Sex mismatch, expected ${proposalInfo.criteria.sex}, received ${BigInt(
           mrz.sex
         )}`
       );
     }
 
     if (
-      proposalData.criteria.birthDateLowerbound != MRZ_ZERO_DATE &&
-      proposalData.criteria.birthDateLowerbound > BigInt(mrz.birthDate)
+      proposalInfo.criteria.birthDateLowerbound != MRZ_ZERO_DATE &&
+      proposalInfo.criteria.birthDateLowerbound > BigInt(mrz.birthDate)
     ) {
       throw new Error("Birth date is lower than lowerbound");
     }
 
     if (
-      proposalData.criteria.birthDateUpperbound != MRZ_ZERO_DATE &&
-      proposalData.criteria.birthDateUpperbound < BigInt(mrz.birthDate)
+      proposalInfo.criteria.birthDateUpperbound != MRZ_ZERO_DATE &&
+      proposalInfo.criteria.birthDateUpperbound < BigInt(mrz.birthDate)
     ) {
       throw new Error("Birth date is higher than upperbound");
     }
 
     if (
-      proposalData.criteria.expirationDateLowerbound != MRZ_ZERO_DATE &&
-      proposalData.criteria.expirationDateLowerbound >
+      proposalInfo.criteria.expirationDateLowerbound != MRZ_ZERO_DATE &&
+      proposalInfo.criteria.expirationDateLowerbound >
         BigInt("0x" + Buffer.from(mrz.expiryDate).toString("hex"))
     ) {
       throw new Error("Expiration date is lower than lowerbound");

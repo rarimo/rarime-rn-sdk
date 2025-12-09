@@ -118,7 +118,7 @@ export async function generateQueryProof() {
   return queryProof;
 }
 
-export async function getProposalData(proposalId: string) {
+export async function getProposalInfo(proposalId: string) {
   const freedomtoolConfig: FreedomToolConfiguration = {
     contracts: {
       proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
@@ -132,7 +132,7 @@ export async function getProposalData(proposalId: string) {
 
   const freedomtool = new FreedomTool(freedomtoolConfig);
 
-  return freedomtool.getProposalData(proposalId);
+  return freedomtool.getProposalInfo(proposalId);
 }
 
 export async function isAlreadyVoted(proposalId: string): Promise<boolean> {
@@ -173,9 +173,9 @@ export async function isAlreadyVoted(proposalId: string): Promise<boolean> {
   console.log("rarimeConfig", rarimeConfig);
 
   const rarime = new Rarime(rarimeConfig);
-  const proposalData = await freedomtool.getProposalData(proposalId);
+  const proposalInfo = await freedomtool.getProposalInfo(proposalId);
 
-  return freedomtool.isAlreadyVoted(proposalData, rarime);
+  return freedomtool.isAlreadyVoted(proposalInfo, rarime);
 }
 
 export async function validate(proposalId: string) {
@@ -224,7 +224,7 @@ export async function validate(proposalId: string) {
   console.log("rarimeConfig", rarimeConfig);
 
   const rarime = new Rarime(rarimeConfig);
-  const pollData = await getProposalData(proposalId);
+  const pollData = await getProposalInfo(proposalId);
 
   await freedomtool.verify(pollData, passport, rarime);
   console.log("freedomtool validate: valid");
@@ -276,13 +276,13 @@ export async function submitVote(proposalId: string) {
   console.log("rarimeConfig", rarimeConfig);
 
   const rarime = new Rarime(rarimeConfig);
-  const proposalData = await getProposalData(proposalId);
+  const proposalInfo = await getProposalInfo(proposalId);
 
-  console.log("pollData", proposalData);
+  console.log("pollData", proposalInfo);
 
   const submitVoteResult = await freedomtool.submitProposal({
     answers: [0],
-    proposalData: proposalData,
+    proposalInfo: proposalInfo,
     rarime,
     passport,
   });

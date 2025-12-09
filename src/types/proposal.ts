@@ -15,7 +15,7 @@ export interface ProposalCriteria {
   expirationDateLowerbound: bigint; //mrz format date bigint encoded 
 }
 
-export interface ProposalData {
+export interface ProposalInfo {
   id: string;
   proposalSmtAddress: string;
   criteria: ProposalCriteria;
