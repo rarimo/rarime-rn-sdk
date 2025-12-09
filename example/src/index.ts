@@ -125,12 +125,12 @@ export async function getPollsData() {
     },
     apiConfiguration: {
       ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
-      votingRelayerUrl: "",
+      votingRelayerUrl: "https://api.stage.freedomtool.org",
       votingRpcUrl: "https://rpc.qtestnet.org",
     },
   };
 
-  const proposalId = "218";
+  const proposalId = "228";
   console.log("proposalId ", proposalId);
 
   const freedomtool = new Freedomtool(freedomtoolConfig);
@@ -201,7 +201,7 @@ export async function validate() {
     },
   };
 
-  const proposalId = "218";
+  const proposalId = "208";
   console.log("proposalId ", proposalId);
 
   const freedomtool = new Freedomtool(freedomtoolConfig);
@@ -251,12 +251,12 @@ export async function submitVote() {
     },
     apiConfiguration: {
       ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
-      votingRelayerUrl: "",
+      votingRelayerUrl: "https://api.stage.freedomtool.org",
       votingRpcUrl: "https://rpc.qtestnet.org",
     },
   };
 
-  const proposalId = "218";
+  const proposalId = "228";
   console.log("proposalId ", proposalId);
 
   const freedomtool = new Freedomtool(freedomtoolConfig);
@@ -290,8 +290,10 @@ export async function submitVote() {
   const rarime = new Rarime(rarimeConfig);
   const pollData = await getPollsData();
 
+  console.log("pollData", pollData)
+
   const submitVoteResult = await freedomtool.submitVote(
-    [1],
+    [0],
     pollData,
     rarime,
     passport

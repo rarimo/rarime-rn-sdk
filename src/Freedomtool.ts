@@ -220,7 +220,7 @@ export class Freedomtool {
       this.config.contractsConfiguration.proposalStateAddress,
       provider
     );
-
+    console.log("proposal state");
     const eventId = await proposalsState.getProposalEventId(proposalData.id);
 
     const eventData = this.getEventData(answers);
@@ -248,19 +248,19 @@ export class Freedomtool {
       expirationDateUpperbound: "52983525027888",
       citizenshipMask: "0",
     };
-
+    console.log("queryProofParams");
     const queryProof = await rarime.generateQueryProof(
       queryProofParams,
       passport
     );
-
+    console.log("queryProof");
     const idCardVoting = createIDCardVotingContract(
       proposalData.sendVoteContractAddress,
       new JsonRpcProvider(this.config.apiConfiguration.votingRpcUrl)
     );
-
+    console.log("idCardVoting");
     const smtProof = await rarime.getSMTProof(passport);
-
+    console.log("smtProof");
     const abiCode = new AbiCoder();
     const userDataEncoded = abiCode.encode(
       ["uint256", "uint256[]", "tuple(uint256,uint256,uint256)"],
@@ -268,25 +268,25 @@ export class Freedomtool {
         proposalData.id,
         // votes mask
         answers.map((v) => 1 << Number(v)),
-        // User payload: (nullifier, citizenship, timestampUpperbound)
+        // User payload: (nullifier, citizenship, identity_creation_timestamp)
         [
           "0x" + queryProof.pub_signals[0],
           "0x" + queryProof.pub_signals[6],
-          "0x" + queryProof.pub_signals[15],
+          passportInfo[1][1],
         ],
       ]
     );
-
+    console.log("userDataEncoded");
     const txCallData = idCardVoting.contractInterface.encodeFunctionData(
       "executeTD1Noir",
       [
         smtProof.root,
-        "0x" + queryProof.pub_signals[13],
+        "0x" + queryProof.pub_signals[14],
         userDataEncoded,
-        "0x" + queryProof.proof,
+        "0x"+queryProof.proof,
       ]
     );
-
+    console.log("txCallData", txCallData);
     const sendVoteRequest = {
       data: {
         attributes: {
@@ -295,7 +295,12 @@ export class Freedomtool {
         },
       },
     };
-
+    console.log("sendVoteRequest");
+    console.log(
+      "send vote address",
+      this.config.apiConfiguration.votingRelayerUrl +
+        "/integrations/proof-verification-relayer/v3/vote"
+    );
     const sendVoteResponse = await fetch(
       this.config.apiConfiguration.votingRelayerUrl +
         "/integrations/proof-verification-relayer/v3/vote",
@@ -307,12 +312,14 @@ export class Freedomtool {
         body: JSON.stringify(sendVoteRequest),
       }
     );
-
+    console.log("sendVoteResponse");
     if (!sendVoteResponse.ok) {
+      console.log("sendVoteResponse", sendVoteResponse);
       throw new Error(`HTTP error ${sendVoteResponse.status}}`);
     }
 
     const sendVoteResponseParsed = await sendVoteResponse.json();
+    console.log("sendVoteResponseParsed", sendVoteResponseParsed);
 
     return sendVoteResponseParsed.data.id;
   }

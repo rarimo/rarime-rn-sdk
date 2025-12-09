@@ -355,7 +355,7 @@ export class RarimePassport {
     const mrz = this.getMRZData();
     console.log("mrz", mrz);
     if (
-      !!proposalData.criteria.citizenshipWhitelist &&
+      proposalData.criteria.citizenshipWhitelist.length &&
       !proposalData.criteria.citizenshipWhitelist.includes(
         BigInt("0x" + Buffer.from(mrz.issuingCountry).toString("hex"))
       )
