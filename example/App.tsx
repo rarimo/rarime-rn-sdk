@@ -54,7 +54,7 @@ export default function App() {
           value={proposalId}
           onChangeText={setProposalId}
           placeholder="Enter your proposal id here"
-          editable={busy}
+          editable={!busy}
         />
         <Button
           title="Get proposal data"

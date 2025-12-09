@@ -6,6 +6,7 @@ import { Sod } from "./utils";
 import { DG1, DG15, SOD } from "@li0ard/tsemrtd";
 import { CertificateSet } from "@peculiar/asn1-cms";
 import { ProposalData } from "./types";
+import { MRZ_ZERO_DATE } from "./Freedomtool";
 
 export interface MRZData {
   documentType: string;
@@ -292,7 +293,7 @@ export class RarimePassport {
 
     if (
       proposalData.criteria.sex !== 0n &&
-      proposalData.criteria.sex === BigInt(mrz.sex)
+      proposalData.criteria.sex !== BigInt(mrz.sex)
     ) {
       throw new Error(
         `Sex mismatch, expected ${proposalData.criteria.sex}, received ${BigInt(
@@ -302,21 +303,21 @@ export class RarimePassport {
     }
 
     if (
-      proposalData.criteria.birthDateLowerbound != 52983525027888n &&
+      proposalData.criteria.birthDateLowerbound != MRZ_ZERO_DATE &&
       proposalData.criteria.birthDateLowerbound > BigInt(mrz.birthDate)
     ) {
       throw new Error("Birth date is lower than lowerbound");
     }
 
     if (
-      proposalData.criteria.birthDateUpperbound != 52983525027888n &&
+      proposalData.criteria.birthDateUpperbound != MRZ_ZERO_DATE &&
       proposalData.criteria.birthDateUpperbound < BigInt(mrz.birthDate)
     ) {
       throw new Error("Birth date is higher than upperbound");
     }
 
     if (
-      proposalData.criteria.expirationDateLowerbound != 52983525027888n &&
+      proposalData.criteria.expirationDateLowerbound != MRZ_ZERO_DATE &&
       proposalData.criteria.expirationDateLowerbound >
         BigInt("0x" + Buffer.from(mrz.expiryDate).toString("hex"))
     ) {

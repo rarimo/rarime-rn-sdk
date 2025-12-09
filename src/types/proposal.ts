@@ -6,10 +6,10 @@ export interface ProposalQuestion {
 
 export interface ProposalCriteria {
   selector: bigint; //bit mask for criteria check
-  citizenshipWhitelist: bigint[]; // array of ACII-strings with country codes
+  citizenshipWhitelist: bigint[]; // array of ASCII-strings with country codes
   timestampUpperbound: bigint; //timestamp 
   identityCountUpperbound: bigint;
-  sex: bigint; //ACII-char bigint encoded 
+  sex: bigint; //ASCII-char bigint encoded 
   birthDateLowerbound: bigint; //mrz format date bigint encoded 
   birthDateUpperbound: bigint; //mrz format date bigint encoded 
   expirationDateLowerbound: bigint; //mrz format date bigint encoded 

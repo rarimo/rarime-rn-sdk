@@ -21,7 +21,7 @@ import { RarimePassport } from "./RarimePassport";
 import { Time } from "@distributedlab/tools";
 import { createIDCardVotingContract } from "./helpers/contracts";
 import { NoirZKProof } from "./RnNoirModule";
-
+export const MRZ_ZERO_DATE = 52983525027888n;
 export interface FreedomToolAPIConfiguration {
   ipfsUrl: string;
   votingRelayerUrl: string;
@@ -284,7 +284,7 @@ export class FreedomTool {
       birthDateUpperbound: proposalData.criteria.birthDateUpperbound.toString(),
       expirationDateLowerbound:
         proposalData.criteria.expirationDateLowerbound.toString(),
-      expirationDateUpperbound: "52983525027888",
+      expirationDateUpperbound: MRZ_ZERO_DATE.toString(),
       citizenshipMask: "0",
     };
 
@@ -364,7 +364,7 @@ export class FreedomTool {
     );
 
     if (!sendVoteResponse.ok) {
-      throw new Error(`HTTP error ${sendVoteResponse.status}}`);
+      throw new Error(`HTTP error ${sendVoteResponse.status}`);
     }
 
     const sendVoteResponseParsed = await sendVoteResponse.json();
