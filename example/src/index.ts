@@ -1,5 +1,7 @@
 import { PRIVATE_KEY, DG1, SOD, DG15 } from "@env";
 import {
+  FreedomTool,
+  FreedomToolConfiguration,
   QueryProofParams,
   Rarime,
   RarimeConfiguration,
@@ -114,4 +116,176 @@ export async function generateQueryProof() {
   console.log("queryProof", queryProof);
 
   return queryProof;
+}
+
+export async function getProposalInfo(proposalId: string) {
+  const freedomtoolConfig: FreedomToolConfiguration = {
+    contracts: {
+      proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
+    },
+    api: {
+      ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
+      votingRelayerUrl: "https://api.stage.freedomtool.org",
+      votingRpcUrl: "https://rpc.qtestnet.org",
+    },
+  };
+
+  const freedomtool = new FreedomTool(freedomtoolConfig);
+
+  return freedomtool.getProposalInfo(proposalId);
+}
+
+export async function isAlreadyVoted(proposalId: string): Promise<boolean> {
+  const userPrivateKey =
+    PRIVATE_KEY && PRIVATE_KEY.length > 0 ? PRIVATE_KEY : "";
+
+  console.log(userPrivateKey);
+
+  const freedomtoolConfig: FreedomToolConfiguration = {
+    contracts: {
+      proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
+    },
+    api: {
+      ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
+      votingRelayerUrl: "",
+      votingRpcUrl: "https://rpc.qtestnet.org",
+    },
+  };
+
+  const freedomtool = new FreedomTool(freedomtoolConfig);
+
+  const rarimeConfig: RarimeConfiguration = {
+    contractsConfiguration: {
+      stateKeeperAddress: "0x12883d5F530AF7EC2adD7cEC29Cf84215efCf4D8",
+      registerSimpleContractAddress:
+        "0x1b6ae4b80F0f26DC53731D1d7aA31fc3996B513B",
+      poseidonSmtAddress: "0xb8bAac4C443097d697F87CC35C5d6B06dDe64D60",
+    },
+    apiConfiguration: {
+      jsonRpcEvmUrl: "https://rpc.qtestnet.org",
+      rarimeApiUrl: "https://api.orgs.app.stage.rarime.com",
+    },
+    userConfiguration: {
+      userPrivateKey: userPrivateKey,
+    },
+  };
+
+  console.log("rarimeConfig", rarimeConfig);
+
+  const rarime = new Rarime(rarimeConfig);
+  const proposalInfo = await freedomtool.getProposalInfo(proposalId);
+
+  return freedomtool.isAlreadyVoted(proposalInfo, rarime);
+}
+
+export async function validate(proposalId: string) {
+  const userPrivateKey =
+    PRIVATE_KEY && PRIVATE_KEY.length > 0 ? PRIVATE_KEY : "";
+
+  console.log(userPrivateKey);
+
+  const freedomtoolConfig: FreedomToolConfiguration = {
+    contracts: {
+      proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
+    },
+    api: {
+      ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
+      votingRelayerUrl: "",
+      votingRpcUrl: "https://rpc.qtestnet.org",
+    },
+  };
+
+  const freedomtool = new FreedomTool(freedomtoolConfig);
+
+  const rarimeConfig: RarimeConfiguration = {
+    contractsConfiguration: {
+      stateKeeperAddress: "0x12883d5F530AF7EC2adD7cEC29Cf84215efCf4D8",
+      registerSimpleContractAddress:
+        "0x1b6ae4b80F0f26DC53731D1d7aA31fc3996B513B",
+      poseidonSmtAddress: "0xb8bAac4C443097d697F87CC35C5d6B06dDe64D60",
+    },
+    apiConfiguration: {
+      jsonRpcEvmUrl: "https://rpc.qtestnet.org",
+      rarimeApiUrl: "https://api.orgs.app.stage.rarime.com",
+    },
+    userConfiguration: {
+      userPrivateKey: userPrivateKey,
+    },
+  };
+
+  const passport = new RarimePassport({
+    dataGroup1: DG1 ? Buffer.from(DG1, "base64") : Buffer.from("", "base64"),
+    sod: SOD ? Buffer.from(SOD, "base64") : Buffer.from("", "base64"),
+    ...(DG15 && DG15.length > 0
+      ? { dataGroup15: Buffer.from(DG15, "base64") }
+      : {}),
+  });
+
+  console.log("rarimeConfig", rarimeConfig);
+
+  const rarime = new Rarime(rarimeConfig);
+  const pollData = await getProposalInfo(proposalId);
+
+  await freedomtool.verify(pollData, passport, rarime);
+  console.log("freedomtool validate: valid");
+}
+
+export async function submitVote(proposalId: string) {
+  const userPrivateKey =
+    PRIVATE_KEY && PRIVATE_KEY.length > 0 ? PRIVATE_KEY : "";
+
+  console.log(userPrivateKey);
+
+  const freedomtoolConfig: FreedomToolConfiguration = {
+    contracts: {
+      proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
+    },
+    api: {
+      ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
+      votingRelayerUrl: "https://api.stage.freedomtool.org",
+      votingRpcUrl: "https://rpc.qtestnet.org",
+    },
+  };
+
+  const freedomtool = new FreedomTool(freedomtoolConfig);
+
+  const rarimeConfig: RarimeConfiguration = {
+    contractsConfiguration: {
+      stateKeeperAddress: "0x12883d5F530AF7EC2adD7cEC29Cf84215efCf4D8",
+      registerSimpleContractAddress:
+        "0x1b6ae4b80F0f26DC53731D1d7aA31fc3996B513B",
+      poseidonSmtAddress: "0xb8bAac4C443097d697F87CC35C5d6B06dDe64D60",
+    },
+    apiConfiguration: {
+      jsonRpcEvmUrl: "https://rpc.qtestnet.org",
+      rarimeApiUrl: "https://api.orgs.app.stage.rarime.com",
+    },
+    userConfiguration: {
+      userPrivateKey: userPrivateKey,
+    },
+  };
+
+  const passport = new RarimePassport({
+    dataGroup1: DG1 ? Buffer.from(DG1, "base64") : Buffer.from("", "base64"),
+    sod: SOD ? Buffer.from(SOD, "base64") : Buffer.from("", "base64"),
+    ...(DG15 && DG15.length > 0
+      ? { dataGroup15: Buffer.from(DG15, "base64") }
+      : {}),
+  });
+
+  console.log("rarimeConfig", rarimeConfig);
+
+  const rarime = new Rarime(rarimeConfig);
+  const proposalInfo = await getProposalInfo(proposalId);
+
+  console.log("pollData", proposalInfo);
+
+  const submitVoteResult = await freedomtool.submitProposal({
+    answers: [0],
+    proposalInfo,
+    rarime,
+    passport,
+  });
+
+  console.log("submitVoteResult", submitVoteResult);
 }

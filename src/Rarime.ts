@@ -13,7 +13,7 @@ import { createRegistrationSimpleContract } from "./helpers/contracts";
 import { RarimeUtils } from "./RarimeUtils";
 import { SignatureAlgorithm } from "./helpers/SignatureAlgorithm";
 import { toPaddedHex32, wrapPem } from "./utils";
-import { QueryProofParams } from "./types";
+import { ProposalInfo, QueryProofParams } from "./types";
 import { SparseMerkleTree } from "./types/contracts/PoseidonSMT";
 import { Poseidon } from "@iden3/js-crypto";
 import { Time } from "@distributedlab/tools";
@@ -57,7 +57,7 @@ export class Rarime {
     this.config = config;
   }
 
-  private async getPassportInfo(
+  public async getPassportInfo(
     passport: RarimePassport
   ): Promise<
     [StateKeeper.PassportInfoStructOutput, StateKeeper.IdentityInfoStructOutput]
@@ -140,81 +140,7 @@ export class Rarime {
     return liteRegisterResponseParsed.data.id;
   }
 
-  private buildLiteRegisterCalldata(
-    verifySodResponseParsed: any,
-    proof: NoirZKProof,
-    passport: RarimePassport
-  ): string {
-    const registrationSimpleContract = createRegistrationSimpleContract(
-      this.config.contractsConfiguration.registerSimpleContractAddress,
-      new JsonRpcProvider(this.config.apiConfiguration.jsonRpcEvmUrl)
-    );
-
-    const passportStruct: RegistrationSimple.PassportStruct = {
-      dgCommit: BigInt("0x" + proof.pub_signals[0]),
-      dg1Hash: Buffer.from(proof.pub_signals[1], "hex"),
-      publicKey: verifySodResponseParsed.data.attributes.public_key,
-      passportHash: toPaddedHex32(passport.getPassportHash()),
-      verifier: verifySodResponseParsed.data.attributes.verifier,
-    };
-
-    const txCallData =
-      registrationSimpleContract.contractInterface.encodeFunctionData(
-        "registerSimpleViaNoir",
-        [
-          "0x" +
-            RarimeUtils.getProfileKey(
-              this.config.userConfiguration.userPrivateKey
-            ),
-          passportStruct,
-          verifySodResponseParsed.data.attributes.signature,
-          "0x" + proof.proof,
-        ]
-      );
-
-    return txCallData;
-  }
-
-  private async generateLiteRegisterProof(
-    hashLength: number,
-    passport: RarimePassport
-  ): Promise<NoirZKProof> {
-    const circuit = NoirCircuitParams.fromName("register_light_" + hashLength);
-
-    await NoirCircuitParams.downloadTrustedSetup();
-
-    const byteCode = await circuit.downloadByteCode();
-
-    const isAndroid = Platform.OS === "android";
-    let inputs = {
-      dg1: NoirCircuitParams.formatArray(
-        Array.from(passport.dataGroup1).map((byteValue) =>
-          byteValue.toString()
-        ),
-        isAndroid
-      ),
-      sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
-    };
-
-    return circuit.prove(JSON.stringify(inputs), byteCode);
-  }
-
-  private getSMTProofIndex(passport: RarimePassport): string {
-    const passportKey = passport.getPassportKey();
-
-    const profileKey = RarimeUtils.getProfileKey(
-      this.config.userConfiguration.userPrivateKey
-    );
-
-    const poseidonHash = Poseidon.hash([
-      passportKey,
-      BigInt("0x" + profileKey),
-    ]);
-
-    return toPaddedHex32(poseidonHash);
-  }
-
-  private async getSMTProof(
+  public async getSMTProof(
     passport: RarimePassport
   ): Promise<SparseMerkleTree.ProofStruct> {
     const provider = new JsonRpcProvider(
@@ -311,6 +237,108 @@ export class Rarime {
     return circuit.prove(JSON.stringify(inputs), byteCode);
   }
 
+  public getEventNullifier(eventId: bigint): string {
+    const privateKeyPoseidonHash = Poseidon.hash([
+      BigInt("0x" + this.config.userConfiguration.userPrivateKey),
+    ]);
+
+    const eventData = Poseidon.hash([
+      BigInt("0x" + this.config.userConfiguration.userPrivateKey),
+      privateKeyPoseidonHash,
+      eventId,
+    ]);
+
+    return toPaddedHex32(eventData);
+  }
+
+  public async validateIdentity(proposalInfo: ProposalInfo, passport: RarimePassport) {
+    const passportInfo = await this.getPassportInfo(passport);
+    
+    if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
+      throw new Error("Timestamp creation identity is bigger than upperbound");
+    }
+
+    if (passportInfo[0][1] > proposalInfo.criteria.identityCountUpperbound) {
+      throw new Error("Identity counter is bigger than upperbound");
+    }
+
+    passport.verifyPassport(proposalInfo);
+   
+  }
+
+  private buildLiteRegisterCalldata(
+    verifySodResponseParsed: any,
+    proof: NoirZKProof,
+    passport: RarimePassport
+  ): string {
+    const registrationSimpleContract = createRegistrationSimpleContract(
+      this.config.contractsConfiguration.registerSimpleContractAddress,
+      new JsonRpcProvider(this.config.apiConfiguration.jsonRpcEvmUrl)
+    );
+
+    const passportStruct: RegistrationSimple.PassportStruct = {
+      dgCommit: BigInt("0x" + proof.pub_signals[0]),
+      dg1Hash: Buffer.from(proof.pub_signals[1], "hex"),
+      publicKey: verifySodResponseParsed.data.attributes.public_key,
+      passportHash: toPaddedHex32(passport.getPassportHash()),
+      verifier: verifySodResponseParsed.data.attributes.verifier,
+    };
+
+    const txCallData =
+      registrationSimpleContract.contractInterface.encodeFunctionData(
+        "registerSimpleViaNoir",
+        [
+          "0x" +
+            RarimeUtils.getProfileKey(
+              this.config.userConfiguration.userPrivateKey
+            ),
+          passportStruct,
+          verifySodResponseParsed.data.attributes.signature,
+          "0x" + proof.proof,
+        ]
+      );
+
+    return txCallData;
+  }
+
+  private async generateLiteRegisterProof(
+    hashLength: number,
+    passport: RarimePassport
+  ): Promise<NoirZKProof> {
+    const circuit = NoirCircuitParams.fromName("register_light_" + hashLength);
+
+    await NoirCircuitParams.downloadTrustedSetup();
+
+    const byteCode = await circuit.downloadByteCode();
+
+    const isAndroid = Platform.OS === "android";
+    let inputs = {
+      dg1: NoirCircuitParams.formatArray(
+        Array.from(passport.dataGroup1).map((byteValue) =>
+          byteValue.toString()
+        ),
+        isAndroid
+      ),
+      sk_identity: "0x" + this.config.userConfiguration.userPrivateKey,
+    };
+
+    return circuit.prove(JSON.stringify(inputs), byteCode);
+  }
+
+  private getSMTProofIndex(passport: RarimePassport): string {
+    const passportKey = passport.getPassportKey();
+
+    const profileKey = RarimeUtils.getProfileKey(
+      this.config.userConfiguration.userPrivateKey
+    );
+
+    const poseidonHash = Poseidon.hash([
+      passportKey,
+      BigInt("0x" + profileKey),
+    ]);
+
+    return toPaddedHex32(poseidonHash);
+  }
   private async verifySodRequest(
     passport: RarimePassport,
     proof: NoirZKProof
@@ -372,7 +400,7 @@ export class Rarime {
     );
 
     if (!verifySodResponse.ok) {
-      throw new Error(`HTTP error ${verifySodResponse.status}}`);
+      throw new Error(`HTTP error ${verifySodResponse.status}`);
     }
 
     return verifySodResponse;
