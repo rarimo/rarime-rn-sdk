@@ -1,15 +1,24 @@
-import { JsonRpcProvider } from "ethers";
+import {
+  AbiCoder,
+  JsonRpcProvider,
+  keccak256,
+  toBeHex,
+  toBigInt,
+  zeroPadValue,
+} from "ethers";
 import {
   IDCardVoting__factory,
   PoseidonSMT__factory,
   ProposalsState,
   ProposalsState__factory,
+  QueryProofParams,
 } from "./types";
 import { ProposalData } from "./types/Polls";
 import { BaseVoting } from "./types/contracts/IDCardVoting";
 import { Rarime } from "./Rarime";
 import { RarimePassport } from "./RarimePassport";
 import { Time } from "@distributedlab/tools";
+import { createIDCardVotingContract } from "./helpers/contracts";
 
 export interface FreedomtoolAPIConfiguration {
   ipfsUrl: string;
@@ -172,5 +181,139 @@ export class Freedomtool {
     if (await this.isAlreadyVoted(proposalData, rarime)) {
       throw new Error("User is already voted");
     }
+  }
+
+  private getEventData(votes: number[]): string {
+    // 2) ABI‑encode as an array of (uint256,uint256) structs
+    const abiCoder = AbiCoder.defaultAbiCoder();
+    const encoded = abiCoder.encode(["uint256[]"], [votes.map((v) => 1 << v)]);
+
+    // 3) Take keccak256 hash
+    const hashHex = keccak256(encoded);
+
+    // 4) Cast to BigInt
+    const hashBn = toBigInt(hashHex);
+
+    // 5) Mask down to 248 bits: (1<<248) - 1
+    const mask = (BigInt(1) << BigInt(248)) - BigInt(1);
+    const truncated = hashBn & mask;
+
+    // 6) Zero‑pad up to 32 bytes (uint256) and return hex
+    return zeroPadValue(toBeHex(truncated), 32);
+  }
+
+  public async submitVote(
+    answers: number[],
+    proposalData: ProposalData,
+    rarime: Rarime,
+    passport: RarimePassport
+  ): Promise<string> {
+    await this.validate(proposalData, passport, rarime);
+
+    const ROOT_VALIDITY = 3600n;
+
+    const provider = new JsonRpcProvider(
+      this.config.apiConfiguration.votingRpcUrl
+    );
+
+    const proposalsState = ProposalsState__factory.connect(
+      this.config.contractsConfiguration.proposalStateAddress,
+      provider
+    );
+
+    const eventId = await proposalsState.getProposalEventId(proposalData.id);
+
+    const eventData = this.getEventData(answers);
+
+    const passportInfo = await rarime.getPassportInfo(passport);
+
+    const timestamp_upperbound =
+      passportInfo[1][1] > 0
+        ? passportInfo[1][1]
+        : proposalData.criteria.timestampUpperbound - ROOT_VALIDITY;
+
+    const queryProofParams: QueryProofParams = {
+      eventId: eventId.toString(),
+      eventData: eventData,
+      selector: proposalData.criteria.selector.toString(),
+      timestampLowerbound: "0",
+      timestampUpperbound: timestamp_upperbound.toString(),
+      identityCountLowerbound: "0",
+      identityCountUpperbound:
+        proposalData.criteria.identityCountUpperbound.toString(),
+      birthDateLowerbound: proposalData.criteria.birthDateLowerbound.toString(),
+      birthDateUpperbound: proposalData.criteria.birthDateUpperbound.toString(),
+      expirationDateLowerbound:
+        proposalData.criteria.expirationDateLowerbound.toString(),
+      expirationDateUpperbound: "52983525027888",
+      citizenshipMask: "0",
+    };
+
+    const queryProof = await rarime.generateQueryProof(
+      queryProofParams,
+      passport
+    );
+
+    const idCardVoting = createIDCardVotingContract(
+      proposalData.sendVoteContractAddress,
+      new JsonRpcProvider(this.config.apiConfiguration.votingRpcUrl)
+    );
+
+    const smtProof = await rarime.getSMTProof(passport);
+
+    const abiCode = new AbiCoder();
+    const userDataEncoded = abiCode.encode(
+      ["uint256", "uint256[]", "tuple(uint256,uint256,uint256)"],
+      [
+        proposalData.id,
+        // votes mask
+        answers.map((v) => 1 << Number(v)),
+        // User payload: (nullifier, citizenship, timestampUpperbound)
+        [
+          "0x" + queryProof.pub_signals[0],
+          "0x" + queryProof.pub_signals[6],
+          "0x" + queryProof.pub_signals[15],
+        ],
+      ]
+    );
+
+    const txCallData = idCardVoting.contractInterface.encodeFunctionData(
+      "executeTD1Noir",
+      [
+        smtProof.root,
+        "0x" + queryProof.pub_signals[13],
+        userDataEncoded,
+        "0x" + queryProof.proof,
+      ]
+    );
+
+    const sendVoteRequest = {
+      data: {
+        attributes: {
+          tx_data: txCallData,
+          destination: proposalData.sendVoteContractAddress,
+        },
+      },
+    };
+
+    const sendVoteResponse = await fetch(
+      this.config.apiConfiguration.votingRelayerUrl +
+        "/integrations/proof-verification-relayer/v3/vote",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(sendVoteRequest),
+      }
+    );
+
+    if (!sendVoteResponse.ok) {
+      throw new Error(`HTTP error ${sendVoteResponse.status}}`);
+    }
+
+    const sendVoteResponseParsed = await sendVoteResponse.json();
+
+    return sendVoteResponseParsed.data.id;
   }
 }
