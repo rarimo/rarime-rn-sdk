@@ -14,7 +14,7 @@ import {
   QueryProofParams,
   StateKeeper,
 } from "./types";
-import { ProposalData } from "./types/Polls";
+import { ProposalData, ProposalQuestion } from "./types/proposal";
 import { BaseVoting } from "./types/contracts/IDCardVoting";
 import { Rarime } from "./Rarime";
 import { RarimePassport } from "./RarimePassport";
@@ -22,32 +22,47 @@ import { Time } from "@distributedlab/tools";
 import { createIDCardVotingContract } from "./helpers/contracts";
 import { NoirZKProof } from "./RnNoirModule";
 
-export interface FreedomtoolAPIConfiguration {
+export interface FreedomToolAPIConfiguration {
   ipfsUrl: string;
   votingRelayerUrl: string;
   votingRpcUrl: string;
 }
 
-export interface FreedomtoolContractsConfiguration {
+export interface SubmitProposalParams {
+  answers: number[];
+  proposalData: ProposalData;
+  rarime: Rarime;
+  passport: RarimePassport;
+}
+
+interface IPFSProposalMetadata {
+  title: string;
+  description?: string;
+  acceptedOptions: ProposalQuestion[];
+  imageCid?: string;
+  rankingBased?: boolean;
+}
+
+export interface FreedomToolContractsConfiguration {
   proposalStateAddress: string;
 }
 
-export interface FreedomtoolConfiguration {
-  contractsConfiguration: FreedomtoolContractsConfiguration;
-  apiConfiguration: FreedomtoolAPIConfiguration;
+export interface FreedomToolConfiguration {
+  contracts: FreedomToolContractsConfiguration;
+  api: FreedomToolAPIConfiguration;
 }
 
-export class Freedomtool {
-  private config: FreedomtoolConfiguration;
+export class FreedomTool {
+  private config: FreedomToolConfiguration;
 
-  constructor(config: FreedomtoolConfiguration) {
+  constructor(config: FreedomToolConfiguration) {
     this.config = config;
   }
 
   public async getProposalData(proposalId: string): Promise<ProposalData> {
-    const contractData = await this.getProposalDataContract(proposalId);
+    const contractData = await this.getProposalDataFromContracts(proposalId);
 
-    const ipfsData = await this.getProposalDataIpfs(contractData[2][4]);
+    const ipfsData = await this.getProposalDataFromIpfs(contractData[2][4]);
 
     const proposalCriteria = await this.getProposalCriteria(
       proposalId,
@@ -68,10 +83,9 @@ export class Freedomtool {
         expirationDateLowerbound: proposalCriteria[7],
       },
       rankingBased: ipfsData.rankingBased ?? false,
-      status: contractData[1],
       startTimestamp: contractData[2][0],
       duration: contractData[2][1],
-      imageCID: ipfsData.imageCID ?? "",
+      imageCID: ipfsData.imageCid ?? "",
       sendVoteContractAddress: contractData[2][5][0],
       title: ipfsData.title,
       questions: ipfsData.acceptedOptions,
@@ -82,65 +96,14 @@ export class Freedomtool {
     return proposalData;
   }
 
-  private async getProposalCriteria(
-    proposalId: string,
-    sendVoteContractAddress: string
-  ): Promise<BaseVoting.ProposalRulesStructOutput> {
-    const provider = new JsonRpcProvider(
-      this.config.apiConfiguration.votingRpcUrl
-    );
-
-    const contract = IDCardVoting__factory.connect(
-      sendVoteContractAddress,
-      provider
-    );
-
-    return contract.getProposalRules(proposalId);
-  }
-
-  private async getProposalDataContract(
-    proposalId: string
-  ): Promise<ProposalsState.ProposalInfoStructOutput> {
-    const provider = new JsonRpcProvider(
-      this.config.apiConfiguration.votingRpcUrl
-    );
-
-    const contract = ProposalsState__factory.connect(
-      this.config.contractsConfiguration.proposalStateAddress,
-      provider
-    );
-
-    return contract.getProposalInfo(proposalId);
-  }
-
-  private async getProposalDataIpfs(ipfsCid: string): Promise<any> {
-    const ipfsResponse = await fetch(
-      this.config.apiConfiguration.ipfsUrl + ipfsCid,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (!ipfsResponse.ok) {
-      throw new Error(`HTTP error ${ipfsResponse.status}`);
-    }
-
-    return ipfsResponse.json();
-  }
-
   public async isAlreadyVoted(
     proposalData: ProposalData,
     rarime: Rarime
   ): Promise<boolean> {
-    const provider = new JsonRpcProvider(
-      this.config.apiConfiguration.votingRpcUrl
-    );
+    const provider = new JsonRpcProvider(this.config.api.votingRpcUrl);
 
     const proposalsState = ProposalsState__factory.connect(
-      this.config.contractsConfiguration.proposalStateAddress,
+      this.config.contracts.proposalStateAddress,
       provider
     );
 
@@ -158,7 +121,7 @@ export class Freedomtool {
     return smtProof[2];
   }
 
-  public async validate(
+  public async verify(
     proposalData: ProposalData,
     passport: RarimePassport,
     rarime: Rarime
@@ -173,11 +136,90 @@ export class Freedomtool {
       throw new Error("Voting has ended.");
     }
 
-    await rarime.validate(proposalData, passport);
+    await rarime.validateIdentity(proposalData, passport);
 
     if (await this.isAlreadyVoted(proposalData, rarime)) {
       throw new Error("User has already voted");
     }
+  }
+
+  public async submitProposal({
+    answers,
+    proposalData,
+    rarime,
+    passport,
+  }: SubmitProposalParams): Promise<string> {
+    await this.verify(proposalData, passport, rarime);
+
+    const passportInfo = await rarime.getPassportInfo(passport);
+
+    const queryProofParams = await this.buildQueryProofParams(
+      answers,
+      proposalData,
+      passportInfo
+    );
+
+    const queryProof = await rarime.generateQueryProof(
+      queryProofParams,
+      passport
+    );
+
+    const txCallData = await this.buildProposalCallData(
+      answers,
+      proposalData,
+      rarime,
+      passport,
+      queryProof,
+      passportInfo
+    );
+
+    const txHash = await this.sendProposalRequest(txCallData, proposalData);
+
+    return txHash;
+  }
+
+  private async getProposalCriteria(
+    proposalId: string,
+    sendVoteContractAddress: string
+  ): Promise<BaseVoting.ProposalRulesStructOutput> {
+    const provider = new JsonRpcProvider(this.config.api.votingRpcUrl);
+
+    const contract = IDCardVoting__factory.connect(
+      sendVoteContractAddress,
+      provider
+    );
+
+    return contract.getProposalRules(proposalId);
+  }
+
+  private async getProposalDataFromContracts(
+    proposalId: string
+  ): Promise<ProposalsState.ProposalInfoStructOutput> {
+    const provider = new JsonRpcProvider(this.config.api.votingRpcUrl);
+
+    const contract = ProposalsState__factory.connect(
+      this.config.contracts.proposalStateAddress,
+      provider
+    );
+
+    return contract.getProposalInfo(proposalId);
+  }
+
+  private async getProposalDataFromIpfs(
+    ipfsCid: string
+  ): Promise<IPFSProposalMetadata> {
+    const ipfsResponse = await fetch(this.config.api.ipfsUrl + ipfsCid, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!ipfsResponse.ok) {
+      throw new Error(`HTTP error ${ipfsResponse.status}`);
+    }
+
+    return ipfsResponse.json();
   }
 
   private getEventData(votes: number[]): string {
@@ -200,12 +242,10 @@ export class Freedomtool {
   }
 
   private async getEventId(proposalData: ProposalData): Promise<bigint> {
-    const provider = new JsonRpcProvider(
-      this.config.apiConfiguration.votingRpcUrl
-    );
+    const provider = new JsonRpcProvider(this.config.api.votingRpcUrl);
 
     const proposalsState = ProposalsState__factory.connect(
-      this.config.contractsConfiguration.proposalStateAddress,
+      this.config.contracts.proposalStateAddress,
       provider
     );
 
@@ -251,7 +291,7 @@ export class Freedomtool {
     return queryProofParams;
   }
 
-  private async buildVoteCallData(
+  private async buildProposalCallData(
     answers: number[],
     proposalData: ProposalData,
     rarime: Rarime,
@@ -264,7 +304,7 @@ export class Freedomtool {
   ): Promise<string> {
     const idCardVoting = createIDCardVotingContract(
       proposalData.sendVoteContractAddress,
-      new JsonRpcProvider(this.config.apiConfiguration.votingRpcUrl)
+      new JsonRpcProvider(this.config.api.votingRpcUrl)
     );
 
     const abiCode = new AbiCoder();
@@ -298,7 +338,7 @@ export class Freedomtool {
     return txCallData;
   }
 
-  private async sendRelayerVote(
+  private async sendProposalRequest(
     txCallData: string,
     proposalData: ProposalData
   ): Promise<string> {
@@ -312,7 +352,7 @@ export class Freedomtool {
     };
 
     const sendVoteResponse = await fetch(
-      this.config.apiConfiguration.votingRelayerUrl +
+      this.config.api.votingRelayerUrl +
         "/integrations/proof-verification-relayer/v3/vote",
       {
         method: "POST",
@@ -330,40 +370,5 @@ export class Freedomtool {
     const sendVoteResponseParsed = await sendVoteResponse.json();
 
     return sendVoteResponseParsed.data.id;
-  }
-
-  public async submitVote(
-    answers: number[],
-    proposalData: ProposalData,
-    rarime: Rarime,
-    passport: RarimePassport
-  ): Promise<string> {
-    await this.validate(proposalData, passport, rarime);
-
-    const passportInfo = await rarime.getPassportInfo(passport);
-
-    const queryProofParams = await this.buildQueryProofParams(
-      answers,
-      proposalData,
-      passportInfo
-    );
-
-    const queryProof = await rarime.generateQueryProof(
-      queryProofParams,
-      passport
-    );
-
-    const txCallData = await this.buildVoteCallData(
-      answers,
-      proposalData,
-      rarime,
-      passport,
-      queryProof,
-      passportInfo
-    );
-
-    const txHash = await this.sendRelayerVote(txCallData, proposalData);
-
-    return txHash;
   }
 }

@@ -59,71 +59,14 @@ export class RarimePassport {
     this.aaChallenge = props.aaChallenge;
   }
 
-  private static extractEcdsaPassportKey(keyBytes: Uint8Array): bigint {
-    if (keyBytes.length !== 65 || keyBytes[0] !== 0x04) {
-      throw new Error("UnsupportedPassportKey: Invalid ECDSA key format");
-    }
-
-    const xBytes = keyBytes.slice(1, 33);
-    const yBytes = keyBytes.slice(33, 65);
-
-    const xHex = Array.from(xBytes, (b) =>
-      b.toString(16).padStart(2, "0")
-    ).join("");
-    const yHex = Array.from(yBytes, (b) =>
-      b.toString(16).padStart(2, "0")
-    ).join("");
-
-    const x = BigInt("0x" + xHex);
-    const y = BigInt("0x" + yHex);
-
-    // 2^248
-    const modulus = 1n << 248n;
-
-    const xMod = x % modulus;
-    const yMod = y % modulus;
-
-    return Poseidon.hash([xMod, yMod]);
-  }
-
-  private static extractRsaPassportKey(
-    modulus: bigint,
-    exponent: bigint
-  ): bigint {
-    const bitLen = modulus.toString(2).length;
-    const requiredBits = 200 * 4 + 224; // 1024
-
-    if (bitLen < requiredBits) {
-      throw new Error("UnsupportedPassportKey: Modulus too short");
-    }
-
-    const shift = BigInt(bitLen - requiredBits);
-    let topBits = modulus >> shift;
-
-    const chunkSizes = [224, 200, 200, 200, 200];
-    const chunks: bigint[] = [];
-
-    for (const size of chunkSizes) {
-      const mask = (1n << BigInt(size)) - 1n;
-      const chunk = topBits & mask;
-      chunks.push(chunk);
-
-      topBits >>= BigInt(size);
-    }
-
-    chunks.reverse();
-
-    return Poseidon.hash(chunks);
-  }
-
   public getPassportKey(): bigint {
     if (this.dataGroup15) {
       const key = this.parseDg15Pubkey();
 
       if (key.type === "Ecdsa") {
-        return RarimePassport.extractEcdsaPassportKey(key.keyBytes);
+        return this.extractEcdsaPassportKey(key.keyBytes);
       } else {
-        return RarimePassport.extractRsaPassportKey(key.modulus, key.exponent);
+        return this.extractRsaPassportKey(key.modulus, key.exponent);
       }
     }
 
@@ -287,11 +230,152 @@ export class RarimePassport {
     return signature;
   }
 
-  getCertificate(): CertificateSet {
+  public getMRZData(): MRZData {
+    const mrz = DG1.load(this.dataGroup1);
+    /**
+     * Example of MRZ String
+     *
+     * IDUTO<<<<<<<<<<<<<<<<<<<<<<<<<<
+     * 1234567897UTO9001019M3001018<<
+     * JOHN<<DOE<<<<<<<<<<<<<<<<<<<
+     *
+     */
+    const documentType = mrz.slice(0, 2);
+    const issuingCountry = mrz.slice(2, 5);
+    const documentNumber = mrz.slice(5, 14);
+
+    const birthDate = mrz.slice(30, 36);
+
+    const sexChar = mrz.charAt(37);
+
+    const sex = sexChar;
+
+    const expiryDate = mrz.slice(38, 44);
+
+    const namesPart = mrz.slice(60);
+    // split by '<<' like in Rust .split("<<")
+    const names = namesPart.split("<<");
+    const lastNameRaw = names[0] ?? "";
+    const firstNameRaw = names[1] ?? "";
+
+    const result: MRZData = {
+      documentType,
+      issuingCountry,
+      documentNumber,
+      birthDate,
+      sex,
+      expiryDate,
+      lastName: lastNameRaw,
+      firstName: firstNameRaw,
+    };
+    return result;
+  }
+
+  public getCertificate(): CertificateSet {
     const buffer = Buffer.from(this.sod);
     const sod = SOD.load(buffer);
     const certificates = sod.certificates;
     return certificates;
+  }
+
+  public verifyPassport(proposalData: ProposalData) {
+    const mrz = this.getMRZData();
+
+    if (
+      proposalData.criteria.citizenshipWhitelist.length &&
+      !proposalData.criteria.citizenshipWhitelist.includes(
+        BigInt("0x" + Buffer.from(mrz.issuingCountry).toString("hex"))
+      )
+    ) {
+      throw new Error("Citizen is not in whitelist");
+    }
+
+    if (
+      proposalData.criteria.sex !== 0n &&
+      proposalData.criteria.sex === BigInt(mrz.sex)
+    ) {
+      throw new Error(
+        `Sex mismatch, expected ${proposalData.criteria.sex}, received ${BigInt(
+          mrz.sex
+        )}`
+      );
+    }
+
+    if (
+      proposalData.criteria.birthDateLowerbound != 52983525027888n &&
+      proposalData.criteria.birthDateLowerbound > BigInt(mrz.birthDate)
+    ) {
+      throw new Error("Birth date is lower than lowerbound");
+    }
+
+    if (
+      proposalData.criteria.birthDateUpperbound != 52983525027888n &&
+      proposalData.criteria.birthDateUpperbound < BigInt(mrz.birthDate)
+    ) {
+      throw new Error("Birth date is higher than upperbound");
+    }
+
+    if (
+      proposalData.criteria.expirationDateLowerbound != 52983525027888n &&
+      proposalData.criteria.expirationDateLowerbound >
+        BigInt("0x" + Buffer.from(mrz.expiryDate).toString("hex"))
+    ) {
+      throw new Error("Expiration date is lower than lowerbound");
+    }
+  }
+
+  private extractEcdsaPassportKey(keyBytes: Uint8Array): bigint {
+    if (keyBytes.length !== 65 || keyBytes[0] !== 0x04) {
+      throw new Error("UnsupportedPassportKey: Invalid ECDSA key format");
+    }
+
+    const xBytes = keyBytes.slice(1, 33);
+    const yBytes = keyBytes.slice(33, 65);
+
+    const xHex = Array.from(xBytes, (b) =>
+      b.toString(16).padStart(2, "0")
+    ).join("");
+    const yHex = Array.from(yBytes, (b) =>
+      b.toString(16).padStart(2, "0")
+    ).join("");
+
+    const x = BigInt("0x" + xHex);
+    const y = BigInt("0x" + yHex);
+
+    // 2^248
+    const modulus = 1n << 248n;
+
+    const xMod = x % modulus;
+    const yMod = y % modulus;
+
+    return Poseidon.hash([xMod, yMod]);
+  }
+
+  private extractRsaPassportKey(modulus: bigint, exponent: bigint): bigint {
+    const bitLen = modulus.toString(2).length;
+    const requiredBits = 200 * 4 + 224; // 1024
+
+    if (bitLen < requiredBits) {
+      throw new Error("UnsupportedPassportKey: Modulus too short");
+    }
+
+    const shift = BigInt(bitLen - requiredBits);
+    let topBits = modulus >> shift;
+
+    const chunkSizes = [224, 200, 200, 200, 200];
+    const chunks: bigint[] = [];
+
+    for (const size of chunkSizes) {
+      const mask = (1n << BigInt(size)) - 1n;
+      const chunk = topBits & mask;
+      chunks.push(chunk);
+
+      topBits >>= BigInt(size);
+    }
+
+    chunks.reverse();
+
+    return Poseidon.hash(chunks);
   }
 
   private parseDg15Pubkey(): ActiveAuthKey {
@@ -348,81 +432,5 @@ export class RarimePassport {
     }
 
     throw new Error(`Unsupported public key algorithm OID: ${algorithmOid}`);
-  }
-
-  validate(proposalData: ProposalData) {
-    const mrz = this.getMRZData();
-
-    if (
-      proposalData.criteria.citizenshipWhitelist.length &&
-      !proposalData.criteria.citizenshipWhitelist.includes(
-        BigInt("0x" + Buffer.from(mrz.issuingCountry).toString("hex"))
-      )
-    ) {
-      throw new Error("Citizen is not in whitelist");
-    }
-
-    if (
-      proposalData.criteria.sex !== 0n &&
-      proposalData.criteria.sex === BigInt(mrz.sex)
-    ) {
-      throw new Error("Sex mismatch");
-    }
-
-    if (
-      proposalData.criteria.birthDateLowerbound != 52983525027888n &&
-      proposalData.criteria.birthDateLowerbound > BigInt(mrz.birthDate)
-    ) {
-      throw new Error("Birth date is lower than lowerbound");
-    }
-
-    if (
-      proposalData.criteria.birthDateUpperbound != 52983525027888n &&
-      proposalData.criteria.birthDateUpperbound < BigInt(mrz.birthDate)
-    ) {
-      throw new Error("Birth date is higher than upperbound");
-    }
-
-    if (
-      proposalData.criteria.expirationDateLowerbound != 52983525027888n &&
-      proposalData.criteria.expirationDateLowerbound >
-        BigInt("0x" + Buffer.from(mrz.expiryDate).toString("hex"))
-    ) {
-      throw new Error("Expiration date is lower than lowerbound");
-    }
-  }
-
-  public getMRZData(): MRZData {
-    const mrz = DG1.load(this.dataGroup1);
-
-    const documentType = mrz.slice(0, 2);
-    const issuingCountry = mrz.slice(2, 5);
-    const documentNumber = mrz.slice(5, 14);
-
-    const birthDate = mrz.slice(30, 36);
-
-    const sexChar = mrz.charAt(37);
-
-    const sex = sexChar;
-
-    const expiryDate = mrz.slice(38, 44);
-
-    const namesPart = mrz.slice(60);
-    // split by '<<' like in Rust .split("<<")
-    const names = namesPart.split("<<");
-    const lastNameRaw = names[0] ?? "";
-    const firstNameRaw = names[1] ?? "";
-
-    const result: MRZData = {
-      documentType,
-      issuingCountry,
-      documentNumber,
-      birthDate,
-      sex,
-      expiryDate,
-      lastName: lastNameRaw,
-      firstName: firstNameRaw,
-    };
-    return result;
   }
 }
