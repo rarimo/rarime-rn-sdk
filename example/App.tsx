@@ -5,6 +5,7 @@ import {
   getPollsData,
   isAlreadyVoted,
   liteRegistration,
+  submitVote,
   validate,
 } from "./src";
 
@@ -89,6 +90,22 @@ export default function App() {
             try {
               const isValid = await validate();
               console.log("validate", isValid);
+              setBusy(false);
+            } catch (e) {
+              console.error(e);
+              alert("Error: " + (e as Error).message);
+              setBusy(false);
+            }
+          }}
+        />
+        <Button
+          title="Submit Vote"
+          disabled={busy}
+          onPress={async () => {
+            setBusy(true);
+            try {
+              const sendVote = await submitVote();
+              console.log("send vote is successful");
               setBusy(false);
             } catch (e) {
               console.error(e);

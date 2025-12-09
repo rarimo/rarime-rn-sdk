@@ -236,5 +236,66 @@ export async function validate() {
   const pollData = await getPollsData();
 
   await freedomtool.validate(pollData, passport, rarime);
-  console.log('freedomtool validate: valid')
+  console.log("freedomtool validate: valid");
+}
+
+export async function submitVote() {
+  const userPrivateKey =
+    PRIVATE_KEY && PRIVATE_KEY.length > 0 ? PRIVATE_KEY : "";
+
+  console.log(userPrivateKey);
+
+  const freedomtoolConfig: FreedomtoolConfiguration = {
+    contractsConfiguration: {
+      proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
+    },
+    apiConfiguration: {
+      ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
+      votingRelayerUrl: "",
+      votingRpcUrl: "https://rpc.qtestnet.org",
+    },
+  };
+
+  const proposalId = "218";
+  console.log("proposalId ", proposalId);
+
+  const freedomtool = new Freedomtool(freedomtoolConfig);
+
+  const rarimeConfig: RarimeConfiguration = {
+    contractsConfiguration: {
+      stateKeeperAddress: "0x12883d5F530AF7EC2adD7cEC29Cf84215efCf4D8",
+      registerSimpleContractAddress:
+        "0x1b6ae4b80F0f26DC53731D1d7aA31fc3996B513B",
+      poseidonSmtAddress: "0xb8bAac4C443097d697F87CC35C5d6B06dDe64D60",
+    },
+    apiConfiguration: {
+      jsonRpcEvmUrl: "https://rpc.qtestnet.org",
+      rarimeApiUrl: "https://api.orgs.app.stage.rarime.com",
+    },
+    userConfiguration: {
+      userPrivateKey: userPrivateKey,
+    },
+  };
+
+  const passport = new RarimePassport({
+    dataGroup1: DG1 ? Buffer.from(DG1, "base64") : Buffer.from("", "base64"),
+    sod: SOD ? Buffer.from(SOD, "base64") : Buffer.from("", "base64"),
+    ...(DG15 && DG15.length > 0
+      ? { dataGroup15: Buffer.from(DG15, "base64") }
+      : {}),
+  });
+
+  console.log("rarimeConfig", rarimeConfig);
+
+  const rarime = new Rarime(rarimeConfig);
+  const pollData = await getPollsData();
+
+  const submitVoteResult = await freedomtool.submitVote(
+    [1],
+    pollData,
+    rarime,
+    passport
+  );
+  
+  console.log("submitVoteResult", submitVoteResult);
 }
