@@ -219,21 +219,21 @@ export class RarimePassport {
     }
 
     if (
-      proposalInfo.criteria.birthDateLowerbound != MRZ_ZERO_DATE &&
+      proposalInfo.criteria.birthDateLowerbound !== MRZ_ZERO_DATE &&
       proposalInfo.criteria.birthDateLowerbound > BigInt(mrz.birthDate)
     ) {
       throw new Error("Birth date is lower than lowerbound");
     }
 
     if (
-      proposalInfo.criteria.birthDateUpperbound != MRZ_ZERO_DATE &&
+      proposalInfo.criteria.birthDateUpperbound !== MRZ_ZERO_DATE &&
       proposalInfo.criteria.birthDateUpperbound < BigInt(mrz.birthDate)
     ) {
       throw new Error("Birth date is higher than upperbound");
     }
 
     if (
-      proposalInfo.criteria.expirationDateLowerbound != MRZ_ZERO_DATE &&
+      proposalInfo.criteria.expirationDateLowerbound !== MRZ_ZERO_DATE &&
       proposalInfo.criteria.expirationDateLowerbound >
         BigInt("0x" + Buffer.from(mrz.expiryDate).toString("hex"))
     ) {
