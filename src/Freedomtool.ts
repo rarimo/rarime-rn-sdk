@@ -114,7 +114,7 @@ export class Freedomtool {
   }
 
   private async getProposalDataIpfs(ipfsCid: string): Promise<any> {
-    const ipfsResponce = await fetch(
+    const ipfsResponse = await fetch(
       this.config.apiConfiguration.ipfsUrl + ipfsCid,
       {
         method: "GET",
@@ -124,11 +124,11 @@ export class Freedomtool {
       }
     );
 
-    if (!ipfsResponce.ok) {
-      throw new Error(`HTTP error ${ipfsResponce.status}}`);
+    if (!ipfsResponse.ok) {
+      throw new Error(`HTTP error ${ipfsResponse.status}`);
     }
 
-    return ipfsResponce.json();
+    return ipfsResponse.json();
   }
 
   public async isAlreadyVoted(
@@ -166,17 +166,17 @@ export class Freedomtool {
     let nowTimestamp = new Time().timestamp;
 
     if (nowTimestamp < proposalData.startTimestamp) {
-      throw new Error("Vouting has not started.");
+      throw new Error("Voting has not started.");
     }
 
     if (nowTimestamp > proposalData.startTimestamp + proposalData.duration) {
-      throw new Error("Vouting has ended.");
+      throw new Error("Voting has ended.");
     }
 
     await rarime.validate(proposalData, passport);
 
     if (await this.isAlreadyVoted(proposalData, rarime)) {
-      throw new Error("User is already voted");
+      throw new Error("User has already voted");
     }
   }
 

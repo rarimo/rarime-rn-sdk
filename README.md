@@ -287,7 +287,7 @@ We support two chains:
 | `IPFS_URL`           | `https://ipfs.rarimo.com `    | `https://ipfs.rarimo.com `              |
 | `VOTING_RELAYER_URL` | `https://api.freedomtool.org` | `https://api.stage.freedomtool.org`     |
 | `FREEDOMTOOL_URL`    | `https://freedomtool.org`     | `https://stage.voting.freedomtool.org/` |
-| `VOUTING_RPC_URL`    | `https://l2.rarimo.com`       | `https://rpc.qtestnet.org`              |
+| `VOTING_RPC_URL`    | `https://l2.rarimo.com`       | `https://rpc.qtestnet.org`              |
 
 ---
 

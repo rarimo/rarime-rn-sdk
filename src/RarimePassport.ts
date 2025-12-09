@@ -359,7 +359,7 @@ export class RarimePassport {
         BigInt("0x" + Buffer.from(mrz.issuingCountry).toString("hex"))
       )
     ) {
-      throw new Error("Citizen is not in whitelis");
+      throw new Error("Citizen is not in whitelist");
     }
 
     if (
@@ -373,14 +373,14 @@ export class RarimePassport {
       proposalData.criteria.birthDateLowerbound != 52983525027888n &&
       proposalData.criteria.birthDateLowerbound > BigInt(mrz.birthDate)
     ) {
-      throw new Error("Birth date is lover then lowerbound");
+      throw new Error("Birth date is lower than lowerbound");
     }
 
     if (
       proposalData.criteria.birthDateUpperbound != 52983525027888n &&
       proposalData.criteria.birthDateUpperbound < BigInt(mrz.birthDate)
     ) {
-      throw new Error("Birth date is higher then upperbound");
+      throw new Error("Birth date is higher than upperbound");
     }
 
     if (
@@ -388,7 +388,7 @@ export class RarimePassport {
       proposalData.criteria.expirationDateLowerbound >
         BigInt("0x" + Buffer.from(mrz.expiryDate).toString("hex"))
     ) {
-      throw new Error("Expiration date is lover then lowerbound");
+      throw new Error("Expiration date is lower than lowerbound");
     }
   }
 

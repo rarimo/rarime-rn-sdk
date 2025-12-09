@@ -104,7 +104,7 @@ export default function App() {
           onPress={async () => {
             setBusy(true);
             try {
-              const sendVote = await submitVote();
+              await submitVote();
               console.log("send vote is successful");
               setBusy(false);
             } catch (e) {

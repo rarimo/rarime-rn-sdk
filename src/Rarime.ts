@@ -372,7 +372,7 @@ export class Rarime {
     );
 
     if (!verifySodResponse.ok) {
-      throw new Error(`HTTP error ${verifySodResponse.status}}`);
+      throw new Error(`HTTP error ${verifySodResponse.status}`);
     }
 
     return verifySodResponse;
@@ -432,11 +432,11 @@ export class Rarime {
     const passportInfo = await this.getPassportInfo(passport);
     
     if (passportInfo[1][1] > proposalData.criteria.timestampUpperbound) {
-      throw new Error("Timestamp creation identity is bigger then upperbound");
+      throw new Error("Timestamp creation identity is bigger than upperbound");
     }
 
     if (passportInfo[0][1] > proposalData.criteria.identityCountUpperbound) {
-      throw new Error("Identity counter is bigger then upperbound");
+      throw new Error("Identity counter is bigger than upperbound");
     }
 
     passport.validate(proposalData);

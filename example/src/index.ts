@@ -290,7 +290,7 @@ export async function submitVote() {
   const rarime = new Rarime(rarimeConfig);
   const pollData = await getPollsData();
 
-  console.log("pollData", pollData)
+  console.log("pollData", pollData);
 
   const submitVoteResult = await freedomtool.submitVote(
     [0],
@@ -298,6 +298,6 @@ export async function submitVote() {
     rarime,
     passport
   );
-  
+
   console.log("submitVoteResult", submitVoteResult);
 }
