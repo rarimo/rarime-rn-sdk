@@ -57,7 +57,7 @@ export class Rarime {
     this.config = config;
   }
 
-  private async getPassportInfo(
+  public async getPassportInfo(
     passport: RarimePassport
   ): Promise<
     [StateKeeper.PassportInfoStructOutput, StateKeeper.IdentityInfoStructOutput]
@@ -214,7 +214,7 @@ export class Rarime {
     return toPaddedHex32(poseidonHash);
   }
 
-  private async getSMTProof(
+  public async getSMTProof(
     passport: RarimePassport
   ): Promise<SparseMerkleTree.ProofStruct> {
     const provider = new JsonRpcProvider(
