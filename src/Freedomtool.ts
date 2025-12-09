@@ -12,6 +12,7 @@ import {
   ProposalsState,
   ProposalsState__factory,
   QueryProofParams,
+  StateKeeper,
 } from "./types";
 import { ProposalData } from "./types/Polls";
 import { BaseVoting } from "./types/contracts/IDCardVoting";
@@ -19,6 +20,7 @@ import { Rarime } from "./Rarime";
 import { RarimePassport } from "./RarimePassport";
 import { Time } from "@distributedlab/tools";
 import { createIDCardVotingContract } from "./helpers/contracts";
+import { NoirZKProof } from "./RnNoirModule";
 
 export interface FreedomtoolAPIConfiguration {
   ipfsUrl: string;
@@ -197,16 +199,7 @@ export class Freedomtool {
     return zeroPadValue(toBeHex(truncated), 32);
   }
 
-  public async submitVote(
-    answers: number[],
-    proposalData: ProposalData,
-    rarime: Rarime,
-    passport: RarimePassport
-  ): Promise<string> {
-    await this.validate(proposalData, passport, rarime);
-
-    const ROOT_VALIDITY = 3600n;
-
+  private async getEventId(proposalData: ProposalData): Promise<bigint> {
     const provider = new JsonRpcProvider(
       this.config.apiConfiguration.votingRpcUrl
     );
@@ -216,11 +209,22 @@ export class Freedomtool {
       provider
     );
 
-    const eventId = await proposalsState.getProposalEventId(proposalData.id);
+    return proposalsState.getProposalEventId(proposalData.id);
+  }
+
+  private async buildQueryProofParams(
+    answers: number[],
+    proposalData: ProposalData,
+    passportInfo: [
+      StateKeeper.PassportInfoStructOutput,
+      StateKeeper.IdentityInfoStructOutput
+    ]
+  ): Promise<QueryProofParams> {
+    const ROOT_VALIDITY = 3600n;
+
+    const eventId = await this.getEventId(proposalData);
 
     const eventData = this.getEventData(answers);
-
-    const passportInfo = await rarime.getPassportInfo(passport);
 
     const timestamp_upperbound =
       passportInfo[1][1] > 0
@@ -244,17 +248,24 @@ export class Freedomtool {
       citizenshipMask: "0",
     };
 
-    const queryProof = await rarime.generateQueryProof(
-      queryProofParams,
-      passport
-    );
+    return queryProofParams;
+  }
 
+  private async buildVoteCallData(
+    answers: number[],
+    proposalData: ProposalData,
+    rarime: Rarime,
+    passport: RarimePassport,
+    queryProof: NoirZKProof,
+    passportInfo: [
+      StateKeeper.PassportInfoStructOutput,
+      StateKeeper.IdentityInfoStructOutput
+    ]
+  ): Promise<string> {
     const idCardVoting = createIDCardVotingContract(
       proposalData.sendVoteContractAddress,
       new JsonRpcProvider(this.config.apiConfiguration.votingRpcUrl)
     );
-
-    const smtProof = await rarime.getSMTProof(passport);
 
     const abiCode = new AbiCoder();
     const userDataEncoded = abiCode.encode(
@@ -272,6 +283,8 @@ export class Freedomtool {
       ]
     );
 
+    const smtProof = await rarime.getSMTProof(passport);
+
     const txCallData = idCardVoting.contractInterface.encodeFunctionData(
       "executeTD1Noir",
       [
@@ -282,6 +295,13 @@ export class Freedomtool {
       ]
     );
 
+    return txCallData;
+  }
+
+  private async sendRelayerVote(
+    txCallData: string,
+    proposalData: ProposalData
+  ): Promise<string> {
     const sendVoteRequest = {
       data: {
         attributes: {
@@ -310,5 +330,40 @@ export class Freedomtool {
     const sendVoteResponseParsed = await sendVoteResponse.json();
 
     return sendVoteResponseParsed.data.id;
+  }
+
+  public async submitVote(
+    answers: number[],
+    proposalData: ProposalData,
+    rarime: Rarime,
+    passport: RarimePassport
+  ): Promise<string> {
+    await this.validate(proposalData, passport, rarime);
+
+    const passportInfo = await rarime.getPassportInfo(passport);
+
+    const queryProofParams = await this.buildQueryProofParams(
+      answers,
+      proposalData,
+      passportInfo
+    );
+
+    const queryProof = await rarime.generateQueryProof(
+      queryProofParams,
+      passport
+    );
+
+    const txCallData = await this.buildVoteCallData(
+      answers,
+      proposalData,
+      rarime,
+      passport,
+      queryProof,
+      passportInfo
+    );
+
+    const txHash = await this.sendRelayerVote(txCallData, proposalData);
+
+    return txHash;
   }
 }
