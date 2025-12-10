@@ -15,6 +15,7 @@ Powered by the **Expo Modules**.
 - **Cross-Platform Support** – Works natively on both iOS and Android via Expo Modules.
 - **Zero-Knowledge Proofs** – Efficient client-side generation of ZK proofs (Noir) for identity verification.
 - **Passport Interaction** – Tools for handling and verifying passport data securely.
+- **FreedomTool Integration** - Tools for allowing users to submit proposals using FreedomTool.
 
 ---
 
@@ -114,7 +115,7 @@ cd ios && pod install
 ```typescript
 import * from '@rarimo/rarime-rn-sdk';
 
-onPress = { async () => {
+async () => {
     try {
         /** Generate private key for user */
         const userPrivateKey: string = RarimeUtils.generateBJJPrivateKey();
@@ -154,53 +155,47 @@ onPress = { async () => {
     }
     catch (e) {
         console.error(e);
-        alert('Error: ' + (e as Error).message);
-        setBusy(false);
     }
-}}
+}
 ```
 
 ### Register identity with SDK
 
 ```typescript
-onPress = { async () => {
-    try {
-        /**
-         * Checks the passport registration status.
-         *
-         * Possible statuses:
-         * - NOT_REGISTERED – the document is not registered.
-         * - REGISTERED_WITH_THIS_PK – the document is registered with this user's private key.
-         * - REGISTERED_WITH_OTHER_PK – the document is registered with a different user's private key.
-         */
-        const documentStatus: DocumentStatus = await rarime.getDocumentStatus(passport);
+async () => {
+  try {
+    /**
+     * Checks the passport registration status.
+     *
+     * Possible statuses:
+     * - NOT_REGISTERED – the document is not registered.
+     * - REGISTERED_WITH_THIS_PK – the document is registered with this user's private key.
+     * - REGISTERED_WITH_OTHER_PK – the document is registered with a different user's private key.
+     */
+    const documentStatus: DocumentStatus = await rarime.getDocumentStatus(
+      passport
+    );
 
-        /** Light registration
-         * Returned hash of register transaction from blockchain
-         *
-         *  Performs a zero-knowledge proof generation.
-         *
-         * ⚠️ This is a computationally intensive cryptographic operation.
-         * Expected execution time: up to ~5 seconds depending on hardware.
-         * Memory usage may be significant (hundreds of MB or more).
-         */
-        const registerTxHash = await rarime.registerIdentity(
-            passport,
-        );
-
-    }
-    catch (e) {
-        console.error(e);
-        alert('Error: ' + (e as Error).message);
-        setBusy(false);
-    }
-}}
+    /** Light registration
+     * Returned hash of register transaction from blockchain
+     *
+     *  Performs a zero-knowledge proof generation.
+     *
+     * ⚠️ This is a computationally intensive cryptographic operation.
+     * Expected execution time: up to ~5 seconds depending on hardware.
+     * Memory usage may be significant (hundreds of MB or more).
+     */
+    const registerTxHash = await rarime.registerIdentity(passport);
+  } catch (e) {
+    console.error(e);
+  }
+};
 ```
 
 ### Query Proof Generation Example
 
 ```typescript
-onPress = { async () => {
+async () => {
   try {
     /**
      * ---------------------------------------------
@@ -256,13 +251,119 @@ onPress = { async () => {
       queryProofParams,
       passport
     );
-
   } catch (e) {
     console.error(e);
-    alert("Error: " + (e as Error).message);
-    setBusy(false);
   }
-}}
+};
+```
+
+---
+
+## FreedomTool integration
+
+### Setup FreedomTool integration
+
+```typescript
+async () => {
+  const freedomTool = new FreedomTool({
+    contracts: {
+      proposalStateAddress: "<PROPOSAL_STATE_CONTRACT_ADDRESS>",
+    },
+    api: {
+      ipfsUrl: "<IPFS_URL>",
+      votingRelayerUrl: "<VOTING_RELAYER_URL>",
+      votingRpcUrl: "<VOTING_RPC_URL>",
+    },
+  });
+};
+```
+
+### Get proposal info example
+
+```typescript
+async () => {
+  try {
+    //proposalId may be parse from QR-code uri
+    const proposalInfo = await freedomtool.getProposalInfo(proposalId);
+  } catch (e) {
+    console.error(e);
+  }
+};
+```
+
+### Verify that an identity is eligible to vote under this proposal
+
+```typescript
+async () => {
+  try {
+    /**
+     * Throws an error only when the user is not allowed to vote on this proposal.
+     *
+     * Checks that the proposal has started and not yet ended,
+     * verifies that the user's identity is eligible,
+     * and confirms passport verification.
+     */
+    await freedomtool.verify(proposalInfo, passport, rarime);
+  } catch (e) {
+    console.error(e);
+  }
+};
+```
+
+### Check if the user has already voted
+
+```typescript
+async () => {
+  try {
+    /**
+     * Returns true only if the user has already voted.
+     */
+    const isVoted = await freedomtool.isAlreadyVoted(proposalInfo, rarime);
+  } catch (e) {
+    console.error(e);
+  }
+};
+```
+
+### Submitting a vote
+
+```typescript
+async () => {
+  try {
+    /**
+     * Array of answer indices selected by the user for the proposal.
+     *
+     * Each number corresponds to the index of the chosen option
+     * in the proposal's list of possible answers.
+     */
+    const answers: number[] = [0];
+
+    /**
+     * ---------------------------------------------
+     *  Submitting a vote
+     * ---------------------------------------------
+     * Generates a zero-knowledge query proof for submitting a proposal.
+     *
+     * ⏱ Execution time:
+     *    ~1–5 seconds depending on device performance.
+     *
+     * 🧠 Resource usage:
+     *    Query-proof generation is cryptographically heavy
+     *    and may require noticeable CPU and memory.
+     *
+     * 🔁 Returns:
+     *    Transaction hash of the submitted vote.
+     */
+    const submitProposalTxHash = await freedomtool.submitProposal({
+      answers,
+      proposalInfo,
+      rarime,
+      passport,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
 ```
 
 ---
