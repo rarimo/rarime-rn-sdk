@@ -209,12 +209,15 @@ export class FreedomTool {
   private async getProposalMetadata(
     ipfsCid: string
   ): Promise<IPFSProposalMetadata> {
-    const ipfsResponse = await fetch(this.config.api.ipfsUrl + ipfsCid, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const ipfsResponse = await fetch(
+      this.config.api.ipfsUrl + `/ipfs/` + ipfsCid,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!ipfsResponse.ok) {
       throw new Error(`HTTP error ${ipfsResponse.status}`);

@@ -124,7 +124,7 @@ export async function getProposalInfo(proposalId: string) {
       proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
     },
     api: {
-      ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
+      ipfsUrl: "https://ipfs.rarimo.com",
       votingRelayerUrl: "https://api.stage.freedomtool.org",
       votingRpcUrl: "https://rpc.qtestnet.org",
     },
@@ -146,7 +146,7 @@ export async function isAlreadyVoted(proposalId: string): Promise<boolean> {
       proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
     },
     api: {
-      ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
+      ipfsUrl: "https://ipfs.rarimo.com",
       votingRelayerUrl: "",
       votingRpcUrl: "https://rpc.qtestnet.org",
     },
@@ -189,7 +189,7 @@ export async function validate(proposalId: string) {
       proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
     },
     api: {
-      ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
+      ipfsUrl: "https://ipfs.rarimo.com",
       votingRelayerUrl: "",
       votingRpcUrl: "https://rpc.qtestnet.org",
     },
@@ -241,7 +241,7 @@ export async function submitVote(proposalId: string) {
       proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
     },
     api: {
-      ipfsUrl: "https://ipfs.rarimo.com/ipfs/",
+      ipfsUrl: "https://ipfs.rarimo.com",
       votingRelayerUrl: "https://api.stage.freedomtool.org",
       votingRpcUrl: "https://rpc.qtestnet.org",
     },
