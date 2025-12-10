@@ -15,7 +15,7 @@ Powered by the **Expo Modules**.
 - **Cross-Platform Support** – Works natively on both iOS and Android via Expo Modules.
 - **Zero-Knowledge Proofs** – Efficient client-side generation of ZK proofs (Noir) for identity verification.
 - **Passport Interaction** – Tools for handling and verifying passport data securely.
-- **FreedomTool Integration** - Tools for allow users to submit proposals using FreedomTool.
+- **FreedomTool Integration** - Tools for allowing users to submit proposals using FreedomTool.
 
 ---
 
@@ -287,7 +287,7 @@ onPress = {async () => {
 ```typescript
 onPress = { async () => {
   try {
-    //proposalId may parse from QR-code uri
+    //proposalId may be parse from QR-code uri
     const proposalInfo = await freedomtool.getProposalInfo(proposalId);
   } catch (e) {
     console.error(e);
