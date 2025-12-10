@@ -297,7 +297,7 @@ async () => {
 async () => {
   try {
     /**
-     * Throws an error only when the user is not allowed to submit the proposal.
+     * Throws an error only when the user is not allowed to vote on this proposal.
      *
      * Checks that the proposal has started and not yet ended,
      * verifies that the user's identity is eligible,
@@ -325,7 +325,7 @@ async () => {
 };
 ```
 
-### Submit proposal
+### Submitting a vote
 
 ```typescript
 async () => {
@@ -340,7 +340,7 @@ async () => {
 
     /**
      * ---------------------------------------------
-     *  Submit proposal
+     *  Submitting a vote
      * ---------------------------------------------
      * Generates a zero-knowledge query proof for submitting a proposal.
      *
@@ -352,7 +352,7 @@ async () => {
      *    and may require noticeable CPU and memory.
      *
      * 🔁 Returns:
-     *    Transaction hash of the submitted proposal.
+     *    Transaction hash of the submitted vote.
      */
     const submitProposalTxHash = await freedomtool.submitProposal({
       answers,
