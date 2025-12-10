@@ -155,8 +155,6 @@ onPress = { async () => {
     }
     catch (e) {
         console.error(e);
-        alert('Error: ' + (e as Error).message);
-        setBusy(false);
     }
 }}
 ```
@@ -188,12 +186,9 @@ onPress = { async () => {
         const registerTxHash = await rarime.registerIdentity(
             passport,
         );
-
     }
     catch (e) {
         console.error(e);
-        alert('Error: ' + (e as Error).message);
-        setBusy(false);
     }
 }}
 ```
@@ -260,8 +255,6 @@ onPress = { async () => {
 
   } catch (e) {
     console.error(e);
-    alert("Error: " + (e as Error).message);
-    setBusy(false);
   }
 }}
 ```
@@ -273,30 +266,20 @@ onPress = { async () => {
 ### Setup FreedomTool integration
 
 ```typescript
-onPress = {async()
-=>
-{
-   try {
-      const freedomtoolConfiguration: FreedomToolConfiguration = {
-         contracts: {
-            proposalStateAddress: '<PROPOSAL_STATE_CONTRACT_ADDRESS>',
-         },
-         api: {
-            ipfsUrl: '<IPFS_URL>',
-            votingRelayerUrl: '<VOTING_RELAYER_URL>',
-            votingRpcUrl: '<VOTING_RPC_URL>',
-         },
-      };
+onPress = {async () => {
+  const freedomtoolConfiguration: FreedomToolConfiguration = {
+    contracts: {
+      proposalStateAddress: "<PROPOSAL_STATE_CONTRACT_ADDRESS>",
+    },
+    api: {
+      ipfsUrl: "<IPFS_URL>",
+      votingRelayerUrl: "<VOTING_RELAYER_URL>",
+      votingRpcUrl: "<VOTING_RPC_URL>",
+    },
+  };
 
-      const freedomtool = new FreedomTool(freedomtoolConfiguration);
-
-   } catch (e) {
-      console.error(e);
-      alert("Error: " + (e as Error).message);
-      setBusy(false);
-   }
-}
-}
+  const freedomtool = new FreedomTool(freedomtoolConfiguration);
+}}
 ```
 
 ### Get proposal info example
@@ -305,14 +288,9 @@ onPress = {async()
 onPress = { async () => {
   try {
     //proposalId may parse from QR-code uri
-const proposalInfo = await freedomtool.getProposalInfo(proposalId);
-
-
-
+    const proposalInfo = await freedomtool.getProposalInfo(proposalId);
   } catch (e) {
     console.error(e);
-    alert("Error: " + (e as Error).message);
-    setBusy(false);
   }
 }}
 ```
@@ -320,25 +298,22 @@ const proposalInfo = await freedomtool.getProposalInfo(proposalId);
 ### Verify that an identity is eligible to vote under this proposal
 
 ```typescript
-onPress = { async () => {
-  try {
-
-  /**
- * Throws an error only when the user is not allowed to submit the proposal.
- *
- * Checks that the proposal has started and not yet ended,
- * verifies that the user's identity is eligible,
- * and confirms passport verification.
- */
-await freedomtool.verify(proposalInfo, passport, rarime);
-
-
-  } catch (e) {
-    console.error(e);
-    alert("Error: " + (e as Error).message);
-    setBusy(false);
-  }
-}}
+onPress = {
+  async () => {
+    try {
+      /**
+       * Throws an error only when the user is not allowed to submit the proposal.
+       *
+       * Checks that the proposal has started and not yet ended,
+       * verifies that the user's identity is eligible,
+       * and confirms passport verification.
+       */
+      await freedomtool.verify(proposalInfo, passport, rarime);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+}
 ```
 
 ### Check if the user has already voted
@@ -346,18 +321,12 @@ await freedomtool.verify(proposalInfo, passport, rarime);
 ```typescript
 onPress = { async () => {
   try {
-
-      /**
- * Returns true only if the user has already voted.
- */
-const isVoted = await freedomtool.isAlreadyVoted(proposalInfo, rarime);
-
-
-
+    /**
+     * Returns true only if the user has already voted.
+     */
+    const isVoted = await freedomtool.isAlreadyVoted(proposalInfo, rarime);
   } catch (e) {
     console.error(e);
-    alert("Error: " + (e as Error).message);
-    setBusy(false);
   }
 }}
 ```
@@ -365,45 +334,44 @@ const isVoted = await freedomtool.isAlreadyVoted(proposalInfo, rarime);
 ### Submit proposal
 
 ```typescript
-onPress = { async () => {
-  try {
-   /**
- * Array of answer indices selected by the user for the proposal.
- *
- * Each number corresponds to the index of the chosen option
- * in the proposal's list of possible answers.
- */
-const answers: number[] = [0]
+onPress = {
+  async () => {
+    try {
+      /**
+       * Array of answer indices selected by the user for the proposal.
+       *
+       * Each number corresponds to the index of the chosen option
+       * in the proposal's list of possible answers.
+       */
+      const answers: number[] = [0];
 
-/**
- * ---------------------------------------------
- *  Submit proposal
- * ---------------------------------------------
- * Generates a zero-knowledge query proof for submitting a proposal.
- *
- * ⏱ Execution time:
- *    ~1–5 seconds depending on device performance.
- *
- * 🧠 Resource usage:
- *    Query-proof generation is cryptographically heavy
- *    and may require noticeable CPU and memory.
- *
- * 🔁 Returns:
- *    Transaction hash of the submitted proposal.
- */
-const submitVoteResult = await freedomtool.submitProposal({
-    answers: ,
-    proposalInfo,
-    rarime,
-    passport,
-  });
-
-  } catch (e) {
-    console.error(e);
-    alert("Error: " + (e as Error).message);
-    setBusy(false);
-  }
-}}
+      /**
+       * ---------------------------------------------
+       *  Submit proposal
+       * ---------------------------------------------
+       * Generates a zero-knowledge query proof for submitting a proposal.
+       *
+       * ⏱ Execution time:
+       *    ~1–5 seconds depending on device performance.
+       *
+       * 🧠 Resource usage:
+       *    Query-proof generation is cryptographically heavy
+       *    and may require noticeable CPU and memory.
+       *
+       * 🔁 Returns:
+       *    Transaction hash of the submitted proposal.
+       */
+      const submitProposalTxHash = await freedomtool.submitProposal({
+        answers,
+        proposalInfo,
+        rarime,
+        passport,
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+}
 ```
 
 ---
