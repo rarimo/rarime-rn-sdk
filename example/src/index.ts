@@ -15,16 +15,16 @@ export async function liteRegistration() {
 
   console.log(userPrivateKey);
 
-  const rarimeConfig: RarimeConfiguration = {
+   const rarimeConfig: RarimeConfiguration = {
     contractsConfiguration: {
-      stateKeeperAddress: "0x12883d5F530AF7EC2adD7cEC29Cf84215efCf4D8",
+      stateKeeperAddress: "0x61aa5b68D811884dA4FEC2De4a7AA0464df166E1",
       registerSimpleContractAddress:
-        "0x1b6ae4b80F0f26DC53731D1d7aA31fc3996B513B",
-      poseidonSmtAddress: "0xb8bAac4C443097d697F87CC35C5d6B06dDe64D60",
+        "0x497D6957729d3a39D43843BD27E6cbD12310F273",
+      poseidonSmtAddress: "0x479F84502Db545FA8d2275372E0582425204A879",
     },
     apiConfiguration: {
-      jsonRpcEvmUrl: "https://rpc.qtestnet.org",
-      rarimeApiUrl: "https://api.orgs.app.stage.rarime.com",
+      jsonRpcEvmUrl: "https://l2.rarimo.com",
+      rarimeApiUrl: "https://api.app.rarime.com",
     },
     userConfiguration: {
       userPrivateKey: userPrivateKey,
@@ -121,12 +121,12 @@ export async function generateQueryProof() {
 export async function getProposalInfo(proposalId: string) {
   const freedomtoolConfig: FreedomToolConfiguration = {
     contracts: {
-      proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
+      proposalStateAddress: "0x9C4b84a940C9D3140a1F40859b3d4367DC8d099a",
     },
     api: {
       ipfsUrl: "https://ipfs.rarimo.com",
-      votingRelayerUrl: "https://api.stage.freedomtool.org",
-      votingRpcUrl: "https://rpc.qtestnet.org",
+      votingRelayerUrl: "https://api.freedomtool.org",
+      votingRpcUrl: "https://l2.rarimo.com",
     },
   };
 
@@ -238,12 +238,12 @@ export async function submitVote(proposalId: string) {
 
   const freedomtoolConfig: FreedomToolConfiguration = {
     contracts: {
-      proposalStateAddress: "0x4C61d7454653720DAb9e26Ca25dc7B8a5cf7065b",
+      proposalStateAddress: "0x9C4b84a940C9D3140a1F40859b3d4367DC8d099a",
     },
     api: {
       ipfsUrl: "https://ipfs.rarimo.com",
-      votingRelayerUrl: "https://api.stage.freedomtool.org",
-      votingRpcUrl: "https://rpc.qtestnet.org",
+      votingRelayerUrl: "https://api.freedomtool.org",
+      votingRpcUrl: "https://l2.rarimo.com",
     },
   };
 
@@ -251,14 +251,14 @@ export async function submitVote(proposalId: string) {
 
   const rarimeConfig: RarimeConfiguration = {
     contractsConfiguration: {
-      stateKeeperAddress: "0x12883d5F530AF7EC2adD7cEC29Cf84215efCf4D8",
+      stateKeeperAddress: "0x61aa5b68D811884dA4FEC2De4a7AA0464df166E1",
       registerSimpleContractAddress:
-        "0x1b6ae4b80F0f26DC53731D1d7aA31fc3996B513B",
-      poseidonSmtAddress: "0xb8bAac4C443097d697F87CC35C5d6B06dDe64D60",
+        "0x497D6957729d3a39D43843BD27E6cbD12310F273",
+      poseidonSmtAddress: "0x479F84502Db545FA8d2275372E0582425204A879",
     },
     apiConfiguration: {
-      jsonRpcEvmUrl: "https://rpc.qtestnet.org",
-      rarimeApiUrl: "https://api.orgs.app.stage.rarime.com",
+      jsonRpcEvmUrl: "https://l2.rarimo.com",
+      rarimeApiUrl: "https://api.app.rarime.com",
     },
     userConfiguration: {
       userPrivateKey: userPrivateKey,
