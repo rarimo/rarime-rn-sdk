@@ -13,7 +13,7 @@ import { createRegistrationSimpleContract } from "./helpers/contracts";
 import { RarimeUtils } from "./RarimeUtils";
 import { SignatureAlgorithm } from "./helpers/SignatureAlgorithm";
 import { toPaddedHex32, wrapPem } from "./utils";
-import { ProposalInfo, QueryProofParams } from "./types";
+import { QueryProofParams } from "./types";
 import { SparseMerkleTree } from "./types/contracts/PoseidonSMT";
 import { Poseidon } from "@iden3/js-crypto";
 import { Time } from "@distributedlab/tools";
