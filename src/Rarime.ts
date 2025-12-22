@@ -120,23 +120,23 @@ export class Rarime {
     const hashLength = hashAlgo.getByteLength();
 
     const proof = await this.generateLiteRegisterProof(hashLength, passport);
-    console.log("proof");
+
     const verifySodResponse = await this.verifySodRequest(passport, proof);
-    console.log("verifySodResponse");
+
     const verifySodResponseParsed = await verifySodResponse.json();
-    console.log("verifySodResponseParsed");
+
     const txCallData = this.buildLiteRegisterCalldata(
       verifySodResponseParsed,
       proof,
       passport
     );
-    console.log("txCallData");
+
     const liteRegisterResponse = await this.sendRegisterLiteTransaction(
       txCallData
     );
-    console.log("liteRegisterResponse");
+
     const liteRegisterResponseParsed = await liteRegisterResponse.json();
-    console.log("liteRegisterResponseParsed");
+
     return liteRegisterResponseParsed.data.id;
   }
 
@@ -295,7 +295,7 @@ export class Rarime {
           "0x" + proof.proof,
         ]
       );
-    console.log("txCallData", txCallData);
+
     return txCallData;
   }
 
