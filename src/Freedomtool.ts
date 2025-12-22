@@ -22,6 +22,8 @@ import { Time } from "@distributedlab/tools";
 import { createIDCardVotingContract } from "./helpers/contracts";
 import { NoirZKProof } from "./RnNoirModule";
 
+const ROOT_VALIDITY = 3600n;
+const UINT32_MAX = 2n ** 32n - 1n;
 export const MRZ_ZERO_DATE = 52983525027888n; // "000000"
 export interface FreedomToolAPIConfiguration {
   ipfsUrl: string;
@@ -137,7 +139,7 @@ export class FreedomTool {
       throw new Error("Voting has ended.");
     }
 
-    await rarime.validateIdentity(proposalInfo, passport);
+    passport.verifyPassport(proposalInfo);
 
     if (await this.isAlreadyVoted(proposalInfo, rarime)) {
       throw new Error("User has already voted");
@@ -268,10 +270,15 @@ export class FreedomTool {
 
     const eventData = this.getEventData(answers);
 
-    const timestamp_upperbound =
-      passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound
-        ? passportInfo[1][1] + 1n
-        : proposalInfo.criteria.timestampUpperbound;
+    let timestamp_upperbound =
+      proposalInfo.criteria.timestampUpperbound - ROOT_VALIDITY;
+
+    let identityCounterUpperBound = UINT32_MAX;
+
+    if (passportInfo[1][1] > 0) {
+      timestamp_upperbound = passportInfo[1][1];
+      identityCounterUpperBound = proposalInfo.criteria.identityCountUpperbound;
+    }
 
     const queryProofParams: QueryProofParams = {
       eventId: eventId.toString(),
@@ -284,8 +291,7 @@ export class FreedomTool {
         proposalInfo.criteria.identityCountUpperbound.toString(),
       birthDateLowerbound: proposalInfo.criteria.birthDateLowerbound.toString(),
       birthDateUpperbound: proposalInfo.criteria.birthDateUpperbound.toString(),
-      expirationDateLowerbound:
-        proposalInfo.criteria.expirationDateLowerbound.toString(),
+      expirationDateLowerbound: identityCounterUpperBound.toString(),
       expirationDateUpperbound: MRZ_ZERO_DATE.toString(),
       citizenshipMask: "0",
     };

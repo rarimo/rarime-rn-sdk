@@ -251,19 +251,6 @@ export class Rarime {
     return toPaddedHex32(eventData);
   }
 
-  public async validateIdentity(
-    proposalInfo: ProposalInfo,
-    passport: RarimePassport
-  ) {
-    const passportInfo = await this.getPassportInfo(passport);
-
-    if (passportInfo[0][1] > proposalInfo.criteria.identityCountUpperbound) {
-      throw new Error("Identity counter is bigger than upperbound");
-    }
-
-    passport.verifyPassport(proposalInfo);
-  }
-
   private buildLiteRegisterCalldata(
     verifySodResponseParsed: any,
     proof: NoirZKProof,
