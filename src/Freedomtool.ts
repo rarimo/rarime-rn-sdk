@@ -151,20 +151,20 @@ export class FreedomTool {
     passport,
   }: SubmitProposalParams): Promise<string> {
     await this.verify(proposalInfo, passport, rarime);
-
+    console.log("verify");
     const passportInfo = await rarime.getPassportInfo(passport);
-
+    console.log("passportInfo");
     const queryProofParams = await this.buildQueryProofParams(
       answers,
       proposalInfo,
       passportInfo
     );
-
+    console.log("queryProofParams");
     const queryProof = await rarime.generateQueryProof(
       queryProofParams,
       passport
     );
-
+    console.log("queryProof");
     const txCallData = await this.buildProposalCallData(
       answers,
       proposalInfo,
@@ -173,9 +173,9 @@ export class FreedomTool {
       queryProof,
       passportInfo
     );
-
+    console.log("txCallData");
     const txHash = await this.sendProposalRequest(txCallData, proposalInfo);
-
+    console.log("txHash");
     return txHash;
   }
 
@@ -264,16 +264,14 @@ export class FreedomTool {
       StateKeeper.IdentityInfoStructOutput
     ]
   ): Promise<QueryProofParams> {
-    const ROOT_VALIDITY = 3600n;
-
     const eventId = await this.getEventId(proposalInfo);
 
     const eventData = this.getEventData(answers);
 
     const timestamp_upperbound =
-      passportInfo[1][1] > 0
-        ? passportInfo[1][1]
-        : proposalInfo.criteria.timestampUpperbound - ROOT_VALIDITY;
+      passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound
+        ? passportInfo[1][1] + 1n
+        : proposalInfo.criteria.timestampUpperbound;
 
     const queryProofParams: QueryProofParams = {
       eventId: eventId.toString(),
@@ -306,6 +304,11 @@ export class FreedomTool {
       StateKeeper.IdentityInfoStructOutput
     ]
   ): Promise<string> {
+
+    const timestamp_upperbound =
+      passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound
+        ? passportInfo[1][1] + 1n
+        : proposalInfo.criteria.timestampUpperbound;
     const idCardVoting = createIDCardVotingContract(
       proposalInfo.sendVoteContractAddress,
       new JsonRpcProvider(this.config.api.votingRpcUrl)
@@ -322,7 +325,7 @@ export class FreedomTool {
         [
           "0x" + queryProof.pub_signals[0],
           "0x" + queryProof.pub_signals[6],
-          passportInfo[1][1],
+          timestamp_upperbound,
         ],
       ]
     );
