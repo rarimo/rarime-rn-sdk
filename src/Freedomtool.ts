@@ -311,16 +311,16 @@ export class FreedomTool {
       StateKeeper.IdentityInfoStructOutput
     ]
   ): Promise<string> {
-    let identity_creation_timestamp = 0n;
+    let identityCreationTimestamp = 0n;
 
     if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
-      identity_creation_timestamp = UINT64_MAX - 1n;
+      identityCreationTimestamp = UINT64_MAX - 1n;
     }
     const idCardVoting = createIDCardVotingContract(
       proposalInfo.sendVoteContractAddress,
       new JsonRpcProvider(this.config.api.votingRpcUrl)
     );
-    console.log("identity_creation_timestamp", identity_creation_timestamp);
+    console.log("identity_creation_timestamp", identityCreationTimestamp);
     const abiCode = new AbiCoder();
     const userDataEncoded = abiCode.encode(
       ["uint256", "uint256[]", "tuple(uint256,uint256,uint256)"],
@@ -332,7 +332,7 @@ export class FreedomTool {
         [
           "0x" + queryProof.pub_signals[0],
           "0x" + queryProof.pub_signals[6],
-          identity_creation_timestamp,
+          identityCreationTimestamp,
         ],
       ]
     );
