@@ -271,13 +271,13 @@ export class FreedomTool {
 
     const eventData = this.getEventData(answers);
 
-    let timestamp_upperbound =
+    let timestampUpperbound =
       proposalInfo.criteria.timestampUpperbound - ROOT_VALIDITY;
 
     let identityCounterUpperBound = UINT32_MAX;
 
     if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
-      timestamp_upperbound = passportInfo[1][1];
+      timestampUpperbound = passportInfo[1][1];
       identityCounterUpperBound = proposalInfo.criteria.identityCountUpperbound;
     }
 
@@ -286,7 +286,7 @@ export class FreedomTool {
       eventData: eventData,
       selector: proposalInfo.criteria.selector.toString(),
       timestampLowerbound: "0",
-      timestampUpperbound: timestamp_upperbound.toString(),
+      timestampUpperbound: timestampUpperbound.toString(),
       identityCountLowerbound: "0",
       identityCountUpperbound: identityCounterUpperBound.toString(),
       birthDateLowerbound: proposalInfo.criteria.birthDateLowerbound.toString(),
@@ -316,10 +316,12 @@ export class FreedomTool {
     if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
       identityCreationTimestamp = UINT64_MAX - 1n;
     }
+
     const idCardVoting = createIDCardVotingContract(
       proposalInfo.sendVoteContractAddress,
       new JsonRpcProvider(this.config.api.votingRpcUrl)
     );
+
     console.log("identity_creation_timestamp", identityCreationTimestamp);
     const abiCode = new AbiCoder();
     const userDataEncoded = abiCode.encode(
