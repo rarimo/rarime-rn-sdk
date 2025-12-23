@@ -24,6 +24,7 @@ import { NoirZKProof } from "./RnNoirModule";
 
 const ROOT_VALIDITY = 3600n;
 const UINT32_MAX = 2n ** 32n - 1n;
+const UINT64_MAX = 2n ** 64n - 1n;
 export const MRZ_ZERO_DATE = 52983525027888n; // "000000"
 export interface FreedomToolAPIConfiguration {
   ipfsUrl: string;
@@ -287,11 +288,11 @@ export class FreedomTool {
       timestampLowerbound: "0",
       timestampUpperbound: timestamp_upperbound.toString(),
       identityCountLowerbound: "0",
-      identityCountUpperbound:
-        proposalInfo.criteria.identityCountUpperbound.toString(),
+      identityCountUpperbound: identityCounterUpperBound.toString(),
       birthDateLowerbound: proposalInfo.criteria.birthDateLowerbound.toString(),
       birthDateUpperbound: proposalInfo.criteria.birthDateUpperbound.toString(),
-      expirationDateLowerbound: identityCounterUpperBound.toString(),
+      expirationDateLowerbound:
+        proposalInfo.criteria.expirationDateLowerbound.toString(),
       expirationDateUpperbound: MRZ_ZERO_DATE.toString(),
       citizenshipMask: "0",
     };
@@ -310,17 +311,16 @@ export class FreedomTool {
       StateKeeper.IdentityInfoStructOutput
     ]
   ): Promise<string> {
-    let timestamp_upperbound =
-      proposalInfo.criteria.timestampUpperbound - ROOT_VALIDITY;
+    let identity_creation_timestamp = 0n;
 
     if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
-      timestamp_upperbound = passportInfo[1][1];
+      identity_creation_timestamp = UINT64_MAX - 1n;
     }
     const idCardVoting = createIDCardVotingContract(
       proposalInfo.sendVoteContractAddress,
       new JsonRpcProvider(this.config.api.votingRpcUrl)
     );
-
+    console.log("identity_creation_timestamp", identity_creation_timestamp);
     const abiCode = new AbiCoder();
     const userDataEncoded = abiCode.encode(
       ["uint256", "uint256[]", "tuple(uint256,uint256,uint256)"],
@@ -332,7 +332,7 @@ export class FreedomTool {
         [
           "0x" + queryProof.pub_signals[0],
           "0x" + queryProof.pub_signals[6],
-          timestamp_upperbound,
+          identity_creation_timestamp,
         ],
       ]
     );
