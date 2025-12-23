@@ -275,7 +275,7 @@ export class FreedomTool {
 
     let identityCounterUpperBound = UINT32_MAX;
 
-    if (passportInfo[1][1] > 0n) {
+    if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
       timestamp_upperbound = passportInfo[1][1];
       identityCounterUpperBound = proposalInfo.criteria.identityCountUpperbound;
     }
@@ -313,7 +313,7 @@ export class FreedomTool {
     let timestamp_upperbound =
       proposalInfo.criteria.timestampUpperbound - ROOT_VALIDITY;
 
-    if (passportInfo[1][1] > 0n) {
+    if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
       timestamp_upperbound = passportInfo[1][1];
     }
     const idCardVoting = createIDCardVotingContract(
