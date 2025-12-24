@@ -22,6 +22,10 @@ import { Time } from "@distributedlab/tools";
 import { createIDCardVotingContract } from "./helpers/contracts";
 import { NoirZKProof } from "./RnNoirModule";
 
+const ROOT_VALIDITY = 3600n;
+const UINT32_MAX = 2n ** 32n - 1n;
+const UINT64_MAX = 2n ** 64n - 1n;
+
 export const MRZ_ZERO_DATE = 52983525027888n; // "000000"
 export interface FreedomToolAPIConfiguration {
   ipfsUrl: string;
@@ -137,7 +141,7 @@ export class FreedomTool {
       throw new Error("Voting has ended.");
     }
 
-    await rarime.validateIdentity(proposalInfo, passport);
+    passport.verifyPassport(proposalInfo);
 
     if (await this.isAlreadyVoted(proposalInfo, rarime)) {
       throw new Error("User has already voted");
@@ -264,26 +268,28 @@ export class FreedomTool {
       StateKeeper.IdentityInfoStructOutput
     ]
   ): Promise<QueryProofParams> {
-    const ROOT_VALIDITY = 3600n;
-
     const eventId = await this.getEventId(proposalInfo);
 
     const eventData = this.getEventData(answers);
 
-    const timestamp_upperbound =
-      passportInfo[1][1] > 0
-        ? passportInfo[1][1]
-        : proposalInfo.criteria.timestampUpperbound - ROOT_VALIDITY;
+    let timestampUpperbound =
+      proposalInfo.criteria.timestampUpperbound - ROOT_VALIDITY;
+
+    let identityCounterUpperBound = UINT32_MAX;
+
+    if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
+      timestampUpperbound = UINT64_MAX - 1n;
+      identityCounterUpperBound = proposalInfo.criteria.identityCountUpperbound;
+    }
 
     const queryProofParams: QueryProofParams = {
       eventId: eventId.toString(),
       eventData: eventData,
       selector: proposalInfo.criteria.selector.toString(),
       timestampLowerbound: "0",
-      timestampUpperbound: timestamp_upperbound.toString(),
+      timestampUpperbound: timestampUpperbound.toString(),
       identityCountLowerbound: "0",
-      identityCountUpperbound:
-        proposalInfo.criteria.identityCountUpperbound.toString(),
+      identityCountUpperbound: identityCounterUpperBound.toString(),
       birthDateLowerbound: proposalInfo.criteria.birthDateLowerbound.toString(),
       birthDateUpperbound: proposalInfo.criteria.birthDateUpperbound.toString(),
       expirationDateLowerbound:
@@ -306,6 +312,12 @@ export class FreedomTool {
       StateKeeper.IdentityInfoStructOutput
     ]
   ): Promise<string> {
+    let identityCreationTimestamp = 0n;
+
+    if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
+      identityCreationTimestamp = UINT64_MAX - 1n;
+    }
+    
     const idCardVoting = createIDCardVotingContract(
       proposalInfo.sendVoteContractAddress,
       new JsonRpcProvider(this.config.api.votingRpcUrl)
@@ -322,7 +334,7 @@ export class FreedomTool {
         [
           "0x" + queryProof.pub_signals[0],
           "0x" + queryProof.pub_signals[6],
-          passportInfo[1][1],
+          identityCreationTimestamp,
         ],
       ]
     );

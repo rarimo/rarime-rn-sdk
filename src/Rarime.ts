@@ -13,7 +13,7 @@ import { createRegistrationSimpleContract } from "./helpers/contracts";
 import { RarimeUtils } from "./RarimeUtils";
 import { SignatureAlgorithm } from "./helpers/SignatureAlgorithm";
 import { toPaddedHex32, wrapPem } from "./utils";
-import { ProposalInfo, QueryProofParams } from "./types";
+import { QueryProofParams } from "./types";
 import { SparseMerkleTree } from "./types/contracts/PoseidonSMT";
 import { Poseidon } from "@iden3/js-crypto";
 import { Time } from "@distributedlab/tools";
@@ -249,21 +249,6 @@ export class Rarime {
     ]);
 
     return toPaddedHex32(eventData);
-  }
-
-  public async validateIdentity(proposalInfo: ProposalInfo, passport: RarimePassport) {
-    const passportInfo = await this.getPassportInfo(passport);
-    
-    if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
-      throw new Error("Timestamp creation identity is bigger than upperbound");
-    }
-
-    if (passportInfo[0][1] > proposalInfo.criteria.identityCountUpperbound) {
-      throw new Error("Identity counter is bigger than upperbound");
-    }
-
-    passport.verifyPassport(proposalInfo);
-   
   }
 
   private buildLiteRegisterCalldata(
