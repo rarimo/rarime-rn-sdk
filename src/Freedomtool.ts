@@ -24,7 +24,7 @@ import { NoirZKProof } from "./RnNoirModule";
 
 const ROOT_VALIDITY = 3600n;
 const UINT32_MAX = 2n ** 32n - 1n;
-const UINT64_MAX = 2n ** 64n - 1n;
+
 export const MRZ_ZERO_DATE = 52983525027888n; // "000000"
 export interface FreedomToolAPIConfiguration {
   ipfsUrl: string;
@@ -314,7 +314,7 @@ export class FreedomTool {
     let identityCreationTimestamp = 0n;
 
     if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
-      identityCreationTimestamp = UINT64_MAX - 1n;
+      identityCreationTimestamp = passportInfo[1][1];
     }
 
     const idCardVoting = createIDCardVotingContract(
