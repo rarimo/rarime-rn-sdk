@@ -322,7 +322,6 @@ export class FreedomTool {
       new JsonRpcProvider(this.config.api.votingRpcUrl)
     );
 
-    console.log("identity_creation_timestamp", identityCreationTimestamp);
     const abiCode = new AbiCoder();
     const userDataEncoded = abiCode.encode(
       ["uint256", "uint256[]", "tuple(uint256,uint256,uint256)"],
