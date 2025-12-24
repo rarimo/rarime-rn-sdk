@@ -1,6 +1,6 @@
 {
   "name": "@rarimo/rarime-rn-sdk",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Rarime SDK for integrating React Native applications with Rarimo protocols and services.",
   "keywords": [
     "react-native",
