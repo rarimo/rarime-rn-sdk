@@ -315,9 +315,9 @@ export class FreedomTool {
     let identityCreationTimestamp = 0n;
 
     if (passportInfo[1][1] > proposalInfo.criteria.timestampUpperbound) {
-      identityCreationTimestamp = passportInfo[1][1];
+      identityCreationTimestamp = UINT64_MAX - 1n;
     }
-
+    
     const idCardVoting = createIDCardVotingContract(
       proposalInfo.sendVoteContractAddress,
       new JsonRpcProvider(this.config.api.votingRpcUrl)
